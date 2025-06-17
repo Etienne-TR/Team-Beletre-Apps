@@ -1,0 +1,23 @@
+# api/responsibilities/.htaccess
+
+# Autoriser seulement les endpoints API
+<FilesMatch "\.(php)$">
+    Order Allow,Deny
+    Allow from all
+</FilesMatch>
+
+# Bloquer tout le reste
+<FilesMatch "^(?!.*\.php$).*">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Empêcher le listing
+Options -Indexes
+
+# Headers CORS pour l'API (si nécessaire)
+<IfModule mod_headers.c>
+    Header always set Access-Control-Allow-Origin "*"
+    Header always set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+    Header always set Access-Control-Allow-Headers "Content-Type, Authorization"
+</IfModule>

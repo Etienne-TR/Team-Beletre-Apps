@@ -1,0 +1,29 @@
+# api/.htaccess - Protection du dossier API
+
+# Bloquer l'accès direct à config.php
+<Files "config.php">
+    Order Allow,Deny
+    Deny from all
+</Files>
+
+# Autoriser tous les .php SAUF config.php
+<FilesMatch "\.php$">
+    Order Allow,Deny
+    Allow from all
+</FilesMatch>
+
+# Bloquer l'accès aux fichiers de sauvegarde et temporaires
+<FilesMatch "\.(bak|backup|old|tmp|log)$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Empêcher le listing des répertoires
+Options -Indexes
+
+# Headers de sécurité
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options nosniff
+    Header always set X-Frame-Options DENY
+    Header always set X-XSS-Protection "1; mode=block"
+</IfModule>

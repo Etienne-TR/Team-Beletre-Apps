@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Team Apps Dashboard</title>
+    <link rel="stylesheet" href="shared/style.css">
+</head>
+<body>
+    <div id="loginSection">
+        <h2>Connexion Team Apps</h2>
+        <form id="loginForm">
+            <input type="text" id="username" placeholder="Username Nextcloud" required>
+            <input type="password" id="appPassword" placeholder="App Password" required>
+            <button type="submit">Se connecter</button>
+        </form>
+        <div id="loginStatus"></div>
+    </div>
+    
+    <div id="dashboard" style="display: none;">
+        <h1>Dashboard Team Apps</h1>
+        <div id="userInfo"></div>
+        <div class="apps">
+            <a href="responsibilities/">Responsabilités</a>
+            <a href="decisions/">Décisions</a>
+        </div>
+        <button onclick="logout()">Déconnexion</button>
+    </div>
+    
+    <script src="shared/common.js"></script>
+    <script>
+        checkAuth();
+        
+        // Gestion du formulaire avec touche Entrée
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            login();
+        });
+        
+        async function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('appPassword').value;
+            
+            try {
+                const response = await fetch('api/auth.php', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({username, password})
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showDashboard(result.user);
+                } else {
+                    const errorMsg = result.error || 'Erreur de connexion inconnue';
+                    document.getElementById('loginStatus').textContent = errorMsg;
+                }
+            } catch (error) {
+                console.error('Erreur login:', error);
+                let errorMessage = 'Erreur de connexion : ';
+                if (error.message.includes('401')) {
+                    errorMessage += 'Identifiants incorrects. Vérifiez votre nom d\'utilisateur et votre mot de passe d\'application Nextcloud.';
+                } else if (error.message.includes('500')) {
+                    errorMessage += 'Erreur serveur. Contactez l\'administrateur.';
+                } else if (error.message.includes('Failed to fetch')) {
+                    errorMessage += 'Impossible de contacter le serveur.';
+                } else {
+                    errorMessage += error.message;
+                }
+                document.getElementById('loginStatus').textContent = errorMessage;
+            }
+        }
+        
+        async function checkAuth() {
+            try {
+                const response = await fetch('api/auth.php');
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.success) {
+                        showDashboard(result.user);
+                    }
+                }
+            } catch (error) {
+                console.log('Pas de session existante');
+            }
+        }
+        
+        function showDashboard(user) {
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'block';
+            
+            const userInfoHtml = `
+                <div><strong>Nom :</strong> ${user.displayname}</div>
+                <div><strong>Initiales :</strong> ${user.initials}</div>
+                <div><strong>Email :</strong> ${user.email}</div>
+                <div><strong>ID :</strong> ${user.id}</div>
+            `;
+            document.getElementById('userInfo').innerHTML = userInfoHtml;
+        }
+        
+        async function logout() {
+            await fetch('api/auth.php', {method: 'DELETE'});
+            location.reload();
+        }
+    </script>
+</body>
+</html>
