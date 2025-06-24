@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Team Apps Dashboard</title>
+    <base href="/home/">
+    <link rel="stylesheet" href="../shared/app-header.css">
+    <link rel="stylesheet" href="../shared/shared.css">
+    <style>
+        :root {
+            --app-accent-color: #2e7d32; /* Vert pour la page d'accueil Team Apps */
+        }
+        
+        /* Éviter les barres de défilement sur la page de connexion */
+        body {
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+        
+        #loginSection {
+            overflow: hidden;
+        }
+        
+        .app-card-taches {
+            background: #1976d2;
+            color: white;
+            border-color: #1976d2;
+        }
+        
+        .app-card-taches:hover {
+            background: #1565c0;
+            border-color: #1565c0;
+            box-shadow: 0 4px 16px rgba(25, 118, 210, 0.3);
+        }
+        
+        .app-card-taches .app-card-content h2,
+        .app-card-taches .app-card-content p {
+            color: white;
+        }
+        
+        .password-help-toggle {
+            margin-top: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .help-toggle-btn {
+            background: none;
+            border: none;
+            color: #1976f2;
+            cursor: pointer;
+            padding: 8px 0 0 0; /* padding haut 8px, bas 0 */
+            font-size: 0.9em;
+            text-align: left;
+            width: 100%;
+            transition: color 0.2s ease;
+        }
+        
+        .help-toggle-btn:hover {
+            color: #1565c0;
+            text-decoration: underline;
+        }
+        
+        .password-help ol {
+            margin: 0;
+            padding-left: 20px;
+        }
+        
+        .password-help li {
+            margin-bottom: 4px;
+        }
+    </style>
+</head>
+<body>
+    <header class="app-header">
+        <div class="header-content">
+            <h1 class="heading-title">📊 Team Apps</h1>
+            <div class="header-info">
+                <button class="btn btn-outline" style="visibility: hidden;">placeholder</button>
+            </div>
+        </div>
+    </header>
+
+    <div id="loginSection">
+        <div class="login-container">
+            <form id="loginForm" class="login-form">
+                <h2>S'identifier avec</h2>
+                <div class="form-group">
+                    <select id="nextcloudServer" class="select-style" required>
+                        <option value="">S'identifier avec</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <input type="text" id="username" class="input-style" placeholder="Utilisateur Nextcloud" required>
+                </div>
+                <div class="form-group">
+                    <input type="password" id="appPassword" class="input-style" placeholder="Mot de passe d'application" required>
+                    <div class="password-help-toggle">
+                        <button type="button" id="passwordHelpToggle" class="help-toggle-btn" style="font-size: var(--font-size-small);">
+                            Générer un mot de passe d'application
+                        </button>
+                        <div class="password-help message-info font-size-small" id="passwordHelp" style="display: none;">
+                            <ol>
+                                <li>Connectez-vous à votre compte Nextcloud</li>
+                                <li>Allez dans Paramètres → Sécurité</li>
+                                <li>Dans la section "Mots de passe d'application", cliquez sur "Créer un nouveau mot de passe d'application"</li>
+                                <li>Donnez un nom à votre application (par exemple : "Team Apps")</li>
+                                <li>Copiez le mot de passe généré et collez le ici</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+                <button type="submit" class="btn-primary">Se connecter</button>
+                <div id="loginStatus"></div>
+            </form>
+        </div>
+    </div>
+    
+    <div id="dashboard" style="display: none;">
+        <main class="main-content">
+            <div class="apps apps-container">
+                <div class="app-card app-card-taches" onclick="window.location.href='../apps/responsibilities/'">
+                    <div class="app-card-icon">📋</div>
+                    <div class="app-card-content">
+                        <h2>Tâches et responsabilités</h2>
+                        <p>Gérer les responsabilités et tâches de l'équipe</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <script type="module" src="js/index.js"></script>
+</body>
+</html>

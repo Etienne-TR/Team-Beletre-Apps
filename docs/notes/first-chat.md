@@ -1,6 +1,6 @@
 # Team Apps - Architecture & Spécifications Techniques
 
-## 🎯 Objectif du Projet
+## 📊 Objectif du Projet
 
 Application web de gestion organisationnelle avec deux modules principaux :
 - **Responsibilities** : Gestion des rôles, tâches et responsabilités

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Responsabilités - Team Apps</title>
+    <link rel="stylesheet" href="../../shared/app-header.css">
+    <link rel="stylesheet" href="../../shared/shared.css">
+    <link rel="stylesheet" href="css/shared.css">
+</head>
+<body>
+    <div id="loadingSection">
+        <div class="loading">Chargement des tâches et responsabilités...</div>
+    </div>
+    
+    <div id="authError" style="display: none;">
+        <div class="error-message">
+            <h2>Accès non autorisé</h2>
+            <p>Vous devez être connecté pour accéder à cette page.</p>
+            <a href="../../">Retour</a>
+        </div>
+    </div>
+    
+    <!-- Page d'accueil avec choix -->
+    <div id="homePage" style="display: none;">
+        <header class="app-header">
+            <div class="header-content">
+                <h1 class="heading-title">📋 Tâches et responsabilités</h1>
+                <div class="header-info">
+                    <div class="user-info" id="currentUser"></div>
+                    <a href="../../" class="back-link btn btn-outline">← Toutes les appli</a>
+                </div>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <div class="views-container">
+                <a href="global-view.html" class="view-card card">
+                    <div class="view-card-icon">🗺️</div>
+                    <div class="view-card-content">
+                        <h2>Vue d'ensemble</h2>
+                        <p>Visualiser toutes les activités et leurs responsables.</p>
+                    </div>
+                </a>
+                
+                <a href="individual-view.html" class="view-card card">
+                    <div class="view-card-icon">👤</div>
+                    <div class="view-card-content">
+                        <h2>Fiches de poste</h2>
+                        <p>Consulter les responsabilités et tâches par personne.</p>
+                    </div>
+                </a>
+            </div>
+        </main>
+    </div>
+
+    <script type="module" src="js/index.js"></script>
+</body>
+</html>

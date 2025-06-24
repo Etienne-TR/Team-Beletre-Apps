@@ -1,0 +1,191 @@
+/* Styles partagés pour l'application Responsabilités */
+
+/* Variables CSS - Supprimées car centralisées dans shared/common.css */
+
+/* Couleur d'accent spécifique à l'application Responsabilités */
+:root {
+    --app-accent-color: #1976d2; /* Bleu moderne pour l'application Responsabilités */
+}
+
+/* Taille de police par défaut pour tout le contenu */
+body {
+    font-size: var(--font-size-normal);
+}
+
+/* Classes utilitaires pour les tailles de police */
+.font-size-large {
+    font-size: var(--font-size-large);
+}
+
+.font-size-medium {
+    font-size: var(--font-size-medium);
+}
+
+.font-size-normal {
+    font-size: var(--font-size-normal);
+}
+
+/* Style pour les titres de section */
+.section-title {
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--border-color);
+}
+
+/* Styles pour les filtres */
+.filters {
+    background: var(--light-gray);
+    padding: 0.5rem 1rem;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    flex-wrap: wrap; /* Permet aux éléments de passer à la ligne sur mobile */
+    justify-content: center; /* Centrer les éléments */
+}
+
+/* Les boutons de sélection héritent de .btn */
+.selection-btn.active {
+    background-color: var(--app-accent-color);
+    border-color: var(--app-accent-color);
+    color: white;
+    font-weight: 600;
+}
+
+/* Containers pour les groupes de boutons */
+.period-buttons, .type-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.person-selector {
+    position: relative;
+    flex-grow: 0; /* Ne prend plus tout l'espace restant */
+    min-width: 200px; /* Largeur minimale */
+    max-width: 400px; /* Largeur maximale pour éviter qu'il devienne trop large */
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .filters {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .period-buttons, .type-buttons {
+        justify-content: center;
+        align-self: center;
+    }
+    
+    .activity-selector {
+        min-width: 100px;
+        font-size: 0.9rem;
+    }
+}
+
+/* Styles des badges - Partagés entre toutes les applications */
+
+/* Classe commune pour tous les badges */
+.badge {
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    display: inline-block;
+    font-weight: 500;
+    font-size: var(--font-size-normal);
+    line-height: 1.2;
+    background: var(--badge-gray);
+}
+
+/* Badge utilisateur */
+.badge-user {
+    background: var(--badge-blue);
+    color: white;
+}
+
+/* Badge de responsable */
+.badge-responsible-for {
+    background: var(--background-lighter);
+}
+
+/* Badge d'assignation */
+.badge-assigned-to {
+    background: var(--background-lighter);
+}
+
+/* Conteneur centralisé pour les cartes d'activités */
+.activities-container {
+    /* Hérite de .cards-container du shared CSS */
+    gap: var(--card-margin);
+    padding: 1rem;
+}
+
+/* Styles centralisés pour les cartes d'activités */
+/* Carte d'activité unifiée pour toutes les vues */
+.activity-card {
+    /* Hérite de .card du shared CSS */
+    display: flex;
+    flex-direction: column;
+    align-items: stretch; /* Aligner sur toute la largeur */
+    text-align: left;     /* Aligner le texte à gauche */
+    padding: 1rem;
+}
+
+.view-card:hover {
+    border-color: var(--app-accent-color);
+}
+
+.activity-card:hover {
+    border-color: var(--app-accent-color);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+/* Carte de tâche (dans les activités) */
+.task-card {
+    /* Hérite de .card du shared CSS */
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    text-align: left;
+    padding: 0.75rem;
+    background: var(--background-light);
+}
+
+.task-card:hover {
+    border-color: var(--app-accent-color);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.badge.disabled {
+    background-color: var(--background-disabled);
+    border-color: var(--text-light);
+}
+
+.badge.assigned {
+    background-color: var(--background-light);
+}
+
+.badge.unassigned {
+    background-color: var(--background-lighter);
+}
+
+.badge.responsible {
+    background-color: var(--background-success);
+}
+
+.badge.co-responsible {
+    background-color: var(--background-success-light);
+}
+
+.badge.gray {
+    background: var(--badge-gray);
+}
+
+.badge.blue {
+    background: var(--badge-blue);
+}
+
+.badge.light {
+    background: var(--background-lighter);
+} 

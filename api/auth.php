@@ -1,44 +1,80 @@
 <?php
-// api/auth.php
+/**
+ * API d'authentification
+ * 
+ * Gère l'authentification des utilisateurs via Nextcloud
+ * et la gestion des sessions utilisateur.
+ */
 error_reporting(E_ALL);
 ini_set('display_errors', 0);
 
 session_start();
 header('Content-Type: application/json; charset=utf-8');
 
-function verifyNextcloudUser($username, $password) {
-    $url = 'https://nuage.ouvaton.coop/ocs/v2.php/cloud/user?format=json';
+function verifyNextcloudUser($username, $password, $server = null) {
+    global $NEXTCLOUD_SERVERS, $DEFAULT_NEXTCLOUD_SERVER;
     
-    if (function_exists('curl_init')) {
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_USERPWD, $username . ':' . $password);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'OCS-APIRequest: true',
-            'User-Agent: TeamApps/1.0'
-        ]);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
-        
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $error = curl_error($ch);
-        curl_close($ch);
-        
-        if ($error) {
-            return false;
-        }
-        
-        if ($httpCode === 200 && $response) {
-            $data = json_decode($response, true);
-            if (isset($data['ocs']['data'])) {
-                return $data['ocs']['data'];
-            }
-        }
+    // Utiliser le serveur par défaut si aucun n'est spécifié
+    if (!$server || !isset($NEXTCLOUD_SERVERS[$server])) {
+        $server = $DEFAULT_NEXTCLOUD_SERVER;
     }
     
-    return false;
+    $baseUrl = $NEXTCLOUD_SERVERS[$server]['url'];
+    $url = $baseUrl . '/ocs/v2.php/cloud/user?format=json';
+    
+    if (!function_exists('curl_init')) {
+        return ['success' => false, 'error' => 'CURL non disponible sur le serveur'];
+    }
+    
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_USERPWD, $username . ':' . $password);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        'OCS-APIRequest: true',
+        'User-Agent: TeamApps/1.0'
+    ]);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+    
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $error = curl_error($ch);
+    curl_close($ch);
+    
+    if ($error) {
+        return ['success' => false, 'error' => 'Erreur de connexion au serveur Nextcloud: ' . $error];
+    }
+    
+    if ($httpCode === 401) {
+        return ['success' => false, 'error' => 'Identifiants incorrects pour le serveur Nextcloud'];
+    }
+    
+    if ($httpCode === 403) {
+        return ['success' => false, 'error' => 'Accès refusé au serveur Nextcloud'];
+    }
+    
+    if ($httpCode === 404) {
+        return ['success' => false, 'error' => 'Serveur Nextcloud non trouvé'];
+    }
+    
+    if ($httpCode !== 200) {
+        return ['success' => false, 'error' => 'Erreur serveur Nextcloud (code ' . $httpCode . ')'];
+    }
+    
+    if (!$response) {
+        return ['success' => false, 'error' => 'Réponse vide du serveur Nextcloud'];
+    }
+    
+    $data = json_decode($response, true);
+    if (!isset($data['ocs']['data'])) {
+        return ['success' => false, 'error' => 'Format de réponse Nextcloud invalide'];
+    }
+    
+    // Ajouter l'information du serveur utilisé
+    $data['ocs']['data']['server'] = $server;
+    $data['ocs']['data']['server_url'] = $baseUrl;
+    return ['success' => true, 'data' => $data['ocs']['data']];
 }
 
 try {
@@ -49,6 +85,7 @@ try {
             $input = json_decode(file_get_contents('php://input'), true);
             $username = $input['username'] ?? '';
             $password = $input['password'] ?? '';
+            $server = $input['server'] ?? null;
             
             if (empty($username) || empty($password)) {
                 http_response_code(400);
@@ -57,25 +94,41 @@ try {
             }
             
             // Vérification Nextcloud
-            $nextcloudResponse = verifyNextcloudUser($username, $password);
+            $nextcloudResponse = verifyNextcloudUser($username, $password, $server);
             
-            if ($nextcloudResponse) {
-                $email = $nextcloudResponse['email'] ?? '';
+            if ($nextcloudResponse['success']) {
+                $email = $nextcloudResponse['data']['email'] ?? '';
+                $server_url = $nextcloudResponse['data']['server_url'] ?? '';
                 
                 if (empty($email)) {
                     http_response_code(401);
-                    echo json_encode(['success' => false, 'error' => 'Aucun email associé à ce compte Nextcloud.']);
+                    echo json_encode([
+                        'success' => false, 
+                        'error' => 'Aucun email associé à ce compte Nextcloud.',
+                        'error_code' => 'NEXTCLOUD_NO_EMAIL'
+                    ]);
                     exit;
                 }
                 
-                // Vérifier utilisateur en base
-                $stmt = $pdo->prepare("SELECT id, display_name, initials FROM users WHERE email = ? AND status = 'active'");
-                $stmt->execute([$email]);
+                // Vérifier l'association en base
+                $stmt = $pdo->prepare("
+                    SELECT u.id, u.display_name, u.initials 
+                    FROM users u
+                    JOIN user_nextcloud un ON u.id = un.user
+                    WHERE un.email = ? AND un.server = ? AND u.status = 'active'
+                ");
+                $stmt->execute([$email, $server_url]);
                 $user = $stmt->fetch();
                 
                 if (!$user) {
                     http_response_code(403);
-                    echo json_encode(['success' => false, 'error' => 'Utilisateur non autorisé. Email: ' . $email]);
+                    echo json_encode([
+                        'success' => false, 
+                        'error' => 'L\'identification au serveur Nextcloud a réussi, mais l\'email associé à votre compte (' . $email . ') n\'est pas reconnu dans notre base de données. Veuillez contacter l\'administrateur pour que votre email soit mis à jour.',
+                        'error_code' => 'EMAIL_NOT_REGISTERED',
+                        'email' => $email,
+                        'server' => $server_url
+                    ]);
                     exit;
                 }
                 
@@ -86,7 +139,7 @@ try {
                     INSERT INTO user_sessions (session_id, user_id, nextcloud_username, nextcloud_data, created_at, expires_at) 
                     VALUES (?, ?, ?, ?, NOW(), DATE_ADD(NOW(), INTERVAL 7 DAY))
                 ");
-                $stmt->execute([$sessionId, $user['id'], $username, json_encode($nextcloudResponse)]);
+                $stmt->execute([$sessionId, $user['id'], $username, json_encode($nextcloudResponse['data'])]);
                 
                 setcookie('team_session', $sessionId, time() + 7*24*3600, '/', '', false, true);
                 
@@ -101,8 +154,13 @@ try {
                     ]
                 ]);
             } else {
+                // Erreur d'identification Nextcloud
                 http_response_code(401);
-                echo json_encode(['success' => false, 'error' => 'Identifiants incorrects. Vérifiez votre nom d\'utilisateur et votre mot de passe d\'application Nextcloud.']);
+                echo json_encode([
+                    'success' => false, 
+                    'error' => $nextcloudResponse['error'],
+                    'error_code' => 'NEXTCLOUD_AUTH_FAILED'
+                ]);
             }
             break;
             

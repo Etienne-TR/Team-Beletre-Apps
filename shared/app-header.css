@@ -1,0 +1,113 @@
+/* Styles pour le bandeau d'en-tête des applications */
+
+/* Variables CSS pour les tailles de police */
+:root {
+    --font-size-large: 1.5rem;    /* Grand - pour les titres d'application (bandeau) */
+    --font-size-medium: 1.25rem;  /* Moyen - pour les titres de sections (noms d'activités) */
+    --font-size-normal: 1rem;     /* Normal - pour tout le reste (par défaut) */
+}
+
+.app-header {
+    background: var(--app-accent-color);
+    color: white;
+    /* padding: 1rem 0; */ /* Retiré pour éviter l'espace en bas */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.header-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1rem 1rem; /* Appliqué ici */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.app-header h1 {
+    margin: 0;
+    font-size: var(--font-size-large);
+    font-weight: 600;
+    flex: 1;
+    min-width: 200px;
+}
+
+.header-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.user-info {
+    background: transparent;
+    border-radius: 50%;
+    
+    /* Dimensions fixes */
+    height: 2.4rem;
+    width: 2.4rem;
+    
+    /* Centrage du contenu (flex) */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    /* Style du texte */
+    font-weight: 600;
+    font-size: 0.9rem; /* Taille de police ajustée à la taille du cercle */
+    color: white;
+    
+    /* Style de la bordure aligné sur .btn-outline */
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    transition: all 0.2s ease;
+    box-sizing: border-box; /* S'assure que padding/border sont inclus dans la taille */
+}
+
+.user-info:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: white;
+}
+
+/* Le style du back-link est maintenant géré par .btn et .btn-outline dans shared.css */
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .header-content {
+        padding: 0.5rem 1rem;
+        flex-direction: column;
+        align-items: stretch;
+        text-align: center;
+        gap: 0.5rem;
+    }
+    
+    .app-header h1 {
+        font-size: var(--font-size-medium);
+        margin-bottom: 0;
+    }
+    
+    .header-info {
+        justify-content: center;
+        gap: 0.5rem;
+    }
+    
+    .user-info {
+        padding: 0.375rem 0.75rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .header-info {
+        flex-direction: column;
+        gap: 0.5rem;
+        align-items: center;
+    }
+    
+    .user-info {
+        text-align: center;
+        justify-content: center;
+    }
+} 

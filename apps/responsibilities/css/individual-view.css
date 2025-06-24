@@ -1,0 +1,261 @@
+/* Styles spécifiques à la vue individuelle des responsabilités */
+
+/* Variables CSS pour les tailles de police */
+:root {
+    --card-margin: 0.25rem;       /* Espacement entre les cartes d'activités */
+}
+
+/* Section des activités individuelles */
+.activities-container {
+    display: grid;
+    gap: var(--card-margin);
+    padding: 1rem;
+}
+
+.responsibility-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+}
+
+.responsibility-icon {
+    font-size: 2rem;
+    width: 3rem;
+    height: 3rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--light-gray);
+    border-radius: 8px;
+}
+
+.responsibility-info {
+    flex: 1;
+}
+
+.responsibility-name {
+    font-size: var(--font-size-medium);
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+}
+
+.responsibility-type {
+    color: var(--text-muted);
+    background: var(--light-gray);
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    display: inline-block;
+}
+
+.responsibility-description {
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin-bottom: 1rem;
+}
+
+/* Section des co-responsables */
+.co-responsibles-section {
+    margin-bottom: 1.5rem;
+}
+
+.co-responsibles-title {
+    font-size: var(--font-size-normal);
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 0.75rem;
+}
+
+.co-responsibles-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+/* Styles des cartes de tâches centralisés dans shared.css */
+
+.task-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.75rem;
+}
+
+.task-name {
+    font-size: var(--font-size-normal);
+    font-weight: 600;
+    color: var(--text-color);
+    flex: 1;
+}
+
+.task-description {
+    color: var(--text-muted);
+    line-height: 1.4;
+    margin-bottom: 0.75rem;
+}
+
+/* Assignations aux tâches */
+.assignments-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+/* Section des tâches */
+.tasks-section {
+    margin-top: 1rem;
+}
+
+.tasks-title {
+    font-size: var(--font-size-normal);
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 0.75rem;
+}
+
+.tasks-list {
+    display: grid;
+    gap: 0.75rem;
+}
+
+/* Styles des blocs d'activité avec tâches centralisés dans shared.css */
+
+.activity-tasks-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+}
+
+.activity-tasks-info {
+    flex: 1;
+}
+
+.activity-tasks-name {
+    font-size: var(--font-size-medium);
+    font-weight: 600;
+    color: var(--text-color);
+    margin: 0;
+}
+
+.activity-tasks-list {
+    display: grid;
+    gap: 1rem;
+}
+
+/* États vides */
+.no-co-responsibles {
+    color: var(--text-light);
+    font-style: italic;
+    padding: 0.5rem;
+    background: var(--light-gray);
+    border-radius: 6px;
+    text-align: center;
+}
+
+.no-tasks {
+    color: var(--text-light);
+    font-style: italic;
+    padding: 0.5rem;
+    background: var(--light-gray);
+    border-radius: 6px;
+    text-align: center;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .responsibility-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+    
+    .responsibility-icon {
+        align-self: center;
+    }
+    
+    .co-responsibles-list,
+    .assignments-list {
+        justify-content: flex-start;
+    }
+    
+    .task-header {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .activity-card {
+        padding: 1rem;
+        margin-bottom: var(--card-margin);
+    }
+    
+    .activity-tasks-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+    
+    .filters {
+        flex-direction: column;
+        gap: 0.75rem;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .filters-spacer {
+        display: none;
+    }
+    
+    .person-selector {
+        align-self: center;
+        width: 100%;
+        max-width: 300px;
+    }
+    
+    .content-buttons {
+        order: 2;
+        justify-content: center;
+        align-self: center;
+    }
+    
+    .period-buttons {
+        order: 3;
+        justify-content: center;
+        align-self: center;
+        margin: 0;
+    }
+}
+
+/* Centrer les titres des sections */
+.section-title {
+    text-align: center;
+}
+
+/* Organisation des filtres dans le header */
+.filters {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1rem;
+    background: var(--light-gray);
+    border-bottom: 1px solid var(--border-color);
+    justify-content: space-between; /* Aligne les éléments à gauche et à droite en desktop */
+}
+
+/* Élément qui prend toute la place disponible entre les éléments alignés à gauche et à droite */
+.filters-spacer {
+    flex: 1;
+}
+
+.person-selector {
+    max-width: 200px; /* Limite la largeur du sélecteur */
+}
+
+.activity-description {
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin-bottom: 1rem;
+} 

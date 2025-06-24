@@ -1,0 +1,532 @@
+/* Styles communs pour les cartes de vue - Partagés entre toutes les applications */
+
+/* Import de la police Open Sans depuis Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap');
+
+/* Import d'Inter pour une excellente lisibilité des contenus */
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap');
+
+/* Import de Merriweather pour les titres avec serif */
+@import url('https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,300;1,400;1,700;1,900&display=swap');
+
+/* Variables CSS partagées */
+:root {
+    --primary-color: #2e7d32;
+    --secondary-color: #4caf50;
+    --accent-color: #81c784;
+    --text-color: #333;
+    --light-gray: #f5f5f5;
+    --border-color: #ddd;
+    --error-color: #f44336;
+    --success-color: #4caf50;
+    --warning-color: #ff9800;
+    
+    /* Nouvelles couleurs centralisées */
+    --text-muted: #666;
+    --text-light: #999;
+    --background-light: #f8f9fa;
+    --background-lighter: #e9ecef;
+    --background-success: #f0f8f0;
+    --background-success-light: #e8f5e8;
+    --background-disabled: #e9e9e9;
+    --badge-gray: #6c757d;
+    --badge-blue: #007cba;
+    
+    /* Système de tailles de police unifié */
+    --font-size-large: 1.5rem;    /* Grand - pour les titres d'application (bandeau) */
+    --font-size-medium: 1.25rem;  /* Moyen - pour les titres de sections (noms d'activités) */
+    --font-size-normal: 1rem;     /* Normal - pour tout le reste (par défaut) */
+    --font-size-small: 0.92rem;   /* Petit - pour les messages et infos secondaires */
+    
+    /* Polices par défaut */
+    --font-family: 'Open Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+    --font-family-content: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+    --font-family-title: 'Merriweather', Georgia, 'Times New Roman', serif;
+    
+    /* Largeur maximale pour le contenu */
+    --max-content-width: 100ch;
+}
+
+/* Taille de police par défaut pour tout le contenu */
+body {
+    font-size: var(--font-size-normal);
+    font-family: var(--font-family);
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden; /* Éviter le défilement horizontal */
+    min-height: 100vh;
+    box-sizing: border-box;
+    
+    /* Largeur maximale pour tout le contenu */
+    max-width: var(--max-content-width);
+    margin: 0 auto;
+}
+
+/* S'assurer que html n'a pas de débordement */
+html {
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+    box-sizing: border-box;
+}
+
+/* Style global pour les éléments select afin d'unifier la police */
+select {
+    font-family: var(--font-family);
+    font-size: var(--font-size-normal);
+}
+
+/* Style global pour les listes déroulantes */
+.select-style {
+    appearance: none;
+    background-color: white;
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 0.75rem 2.5rem 0.75rem 1rem; /* Même padding que .input-style */
+    height: auto; /* Hauteur automatique pour correspondre aux champs de texte */
+    box-sizing: border-box;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: var(--font-family);
+    font-size: var(--font-size-normal);
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 1rem;
+    width: 100%; /* Même largeur que les champs de texte */
+    min-width: unset; /* Supprimer la largeur minimale */
+    max-width: unset; /* Supprimer la largeur maximale */
+}
+
+.select-style:hover {
+    border-color: var(--text-light);
+}
+
+.select-style:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(46, 125, 50, 0.2);
+}
+
+.select-style option {
+    background: white;
+    color: var(--text-color);
+    padding: 0.5rem;
+}
+
+/* Responsive pour les selects */
+@media (max-width: 768px) {
+    .select-style {
+        min-width: 150px;
+        font-size: 0.9rem;
+    }
+}
+
+/* Classes utilitaires pour les tailles de police */
+.font-size-large {
+    font-size: var(--font-size-large);
+}
+
+.font-size-medium {
+    font-size: var(--font-size-medium);
+}
+
+.font-size-normal {
+    font-size: var(--font-size-normal);
+}
+
+/* Classes utilitaires pour les polices */
+.font-content {
+    font-family: var(--font-family-content);
+    line-height: 1.6; /* Meilleur espacement pour la lecture */
+    letter-spacing: 0.01em; /* Légère augmentation de l'espacement des lettres */
+}
+
+.font-interface {
+    font-family: var(--font-family);
+    line-height: 1.4; /* Espacement standard pour l'interface */
+}
+
+.heading-title {
+    font-family: var(--font-family-title);
+    font-weight: 700; /* Bold par défaut pour les titres */
+    line-height: 1.2; /* Espacement plus serré pour les titres */
+}
+
+/* Style pour les titres de section */
+.section-title {
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--border-color);
+}
+
+/* Styles de base pour les conteneurs de cartes */
+.cards-container {
+    display: grid;
+    grid-template-columns: 1fr; /* Une seule carte par ligne par défaut */
+    gap: 2rem;
+    padding: 2rem;
+}
+
+/* Style de base pour les cartes */
+.card {
+    background: white;
+    border: 1px solid var(--background-lighter); /* Bordure standardisée */
+    border-radius: 12px;
+    padding: 2rem;
+    text-decoration: none;
+    color: var(--text-color);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    text-align: center;
+}
+
+.card:hover {
+    border-color: var(--accent-color); /* Couleur plus claire pour le survol */
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+/* Exemple d'utilisation :
+   <div class="cards-container">
+       <div class="card">Contenu de la carte</div>
+       <div class="card">Autre carte</div>
+   </div>
+*/
+
+/* Styles communs pour les cartes de vue */
+.views-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    padding: 2rem;
+}
+
+.view-card {
+    flex-direction: column; /* Surcharge pour disposition verticale */
+}
+
+.view-card-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+.view-card-content h2 {
+    margin: 0 0 0.5rem 0;
+    font-size: var(--font-size-medium);
+    color: var(--text-color);
+}
+
+.view-card-content p {
+    margin: 0;
+    color: var(--text-muted);
+    line-height: 1.4;
+    font-family: var(--font-family-content);
+}
+
+/* Styles pour les cartes d'applications */
+.apps-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    padding: 2rem;
+}
+
+.app-card {
+    flex-direction: column; /* Surcharge pour disposition verticale */
+    background: white;
+    border: 1px solid var(--background-lighter);
+    border-radius: 12px;
+    padding: 2rem;
+    text-decoration: none;
+    color: var(--text-color);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    text-align: center;
+}
+
+.app-card:hover {
+    border-color: var(--accent-color);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.app-card-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+.app-card-content h2 {
+    margin: 0 0 0.5rem 0;
+    font-size: var(--font-size-medium);
+    color: var(--text-color);
+}
+
+.app-card-content p {
+    margin: 0;
+    color: var(--text-muted);
+    line-height: 1.4;
+    font-family: var(--font-family-content);
+}
+
+/* Responsive design pour les cartes */
+@media (max-width: 768px) {
+    .cards-container {
+        padding: 1rem;
+        gap: 1rem;
+    }
+    
+    .views-container,
+    .apps-container {
+        grid-template-columns: 1fr;
+        padding: 1rem;
+        gap: 1rem;
+    }
+    
+    .card {
+        padding: 1.5rem;
+    }
+    
+    .view-card-icon,
+    .app-card-icon {
+        font-size: 2.5rem;
+    }
+}
+
+/* Styles pour les états vides */
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--text-muted);
+}
+
+.empty-content {
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.empty-icon {
+    font-size: 4rem;
+    display: block;
+    margin-bottom: 1rem;
+}
+
+/* Style de base pour les boutons */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    
+    background: white;
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    padding: 0 1rem; /* Padding horizontal */
+    border-radius: 6px;
+    
+    height: 2.4rem; /* Hauteur fixe pour alignement */
+    box-sizing: border-box;
+    
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: var(--font-size-normal);
+    font-family: var(--font-family);
+    text-decoration: none;
+    min-width: 80px;
+    text-align: center;
+}
+
+.btn:hover {
+    background-color: var(--background-light);
+    border-color: var(--text-light);
+}
+
+/* Style pour les boutons "contour" (utilisé pour le bouton retour) */
+.btn-outline {
+    background: transparent;
+    border-color: rgba(255, 255, 255, 0.5);
+    color: white;
+}
+
+.btn-outline:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: white;
+}
+
+/* Styles pour les messages */
+.message,
+.message-info,
+.message-success,
+.message-error,
+.message-warning {
+    padding: 1rem;
+    margin: 1rem 0;
+    border-radius: 6px;
+    border-left: 4px solid;
+    font-size: var(--font-size-small);
+    font-family: var(--font-family);
+    box-sizing: border-box;
+}
+
+/* Styles spécifiques pour chaque type de message */
+.message-info {
+    background: #e3f2fd;
+    border-left-color: #2196f3;
+    color: #1976d2;
+}
+
+.message-success {
+    background: var(--background-success-light);
+    border-left-color: var(--success-color);
+    color: #2e7d32;
+}
+
+.message-error {
+    background: #ffebee;
+    border-left-color: var(--error-color);
+    color: #c62828;
+}
+
+.message-warning {
+    background: #fff3e0;
+    border-left-color: var(--warning-color);
+    color: #ef6c00;
+}
+
+/* Styles pour les formulaires de connexion */
+.login-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%; /* Utiliser toute la hauteur disponible */
+    padding: 1rem;
+    box-sizing: border-box;
+}
+
+.login-form {
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 400px;
+    box-sizing: border-box; /* S'assurer que padding est inclus dans la largeur */
+}
+
+.login-form h2 {
+    text-align: center;
+    margin-bottom: 2rem;
+    color: var(--text-color);
+    font-size: var(--font-size-medium);
+    font-weight: 600;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--text-color);
+    font-weight: 500;
+}
+
+/* Styles pour les champs de texte */
+.input-style {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-family: var(--font-family);
+    font-size: var(--font-size-normal);
+    color: var(--text-color);
+    background-color: white;
+    box-sizing: border-box;
+    transition: all 0.2s ease;
+}
+
+.input-style:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(46, 125, 50, 0.2);
+}
+
+.input-style::placeholder {
+    color: var(--text-light);
+}
+
+.input-style:hover {
+    border-color: var(--text-light);
+}
+
+/* Styles pour les boutons de formulaire */
+.btn-primary {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 0.75rem 1.5rem;
+    font-family: var(--font-family);
+    font-size: var(--font-size-normal);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.btn-primary:hover {
+    background-color: var(--secondary-color);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(46, 125, 50, 0.3);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(46, 125, 50, 0.3);
+}
+
+.btn-primary:disabled {
+    background-color: var(--background-disabled);
+    color: var(--text-light);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Responsive pour les formulaires */
+@media (max-width: 768px) {
+    .login-container {
+        padding: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .login-form {
+        padding: 1.5rem;
+    }
+    
+    .input-style,
+    .btn-primary,
+    .select-style {
+        font-size: 0.9rem;
+    }
+}
+
+/* Responsive pour la largeur maximale */
+@media (max-width: 768px) {
+    /* Styles supprimés pour éviter les conflits avec le header */
+}
+
+@media (max-width: 480px) {
+    /* Styles supprimés pour éviter les conflits avec le header */
+} 
