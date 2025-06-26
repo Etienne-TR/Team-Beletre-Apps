@@ -1,0 +1,8 @@
+/* Conteneur principal du sélecteur de date */
+.date-selector {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Tous les styles spécifiques aux boutons du sélecteur de date sont supprimés. Les boutons utiliseront uniquement la classe .btn partagée. */ 

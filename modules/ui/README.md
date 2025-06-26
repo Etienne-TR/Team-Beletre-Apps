@@ -132,6 +132,60 @@ Le module cherche les éléments avec la classe `user-info` :
 }
 ```
 
+### `date-selector.js`
+**Sélecteur de date dynamique avec navigation et calendrier**
+
+```javascript
+import { 
+    initDateSelector, 
+    createDateSelectorHTML, 
+    setupDateSelectorEvents, 
+    onDateChange 
+} from '../../../modules/ui/date-selector.js';
+
+// Initialiser avec aujourd'hui par défaut
+initDateSelector();
+
+// Créer le HTML du sélecteur
+const dateSelectorHTML = createDateSelectorHTML();
+
+// Configurer les événements
+setupDateSelectorEvents();
+
+// S'abonner aux changements
+onDateChange((newDate, formattedDate) => {
+    console.log('Date changée:', formattedDate);
+    // Recharger les données
+    await loadDataForDate(formattedDate);
+});
+```
+
+**Fonctionnalités :**
+- Navigation par année (précédente/suivante)
+- Affichage de la date actuelle (DD/MM/YYYY)
+- Sélection précise via calendrier natif
+- Synchronisation automatique entre toutes les vues
+- Valeur par défaut : aujourd'hui
+
+**Interface :**
+```
+[←] [15/06/2024] [→]
+```
+
+**API :**
+- `initDateSelector(defaultDate = null)` : Initialise le sélecteur
+- `createDateSelectorHTML()` : Génère le HTML du composant
+- `setupDateSelectorEvents(containerSelector = 'body')` : Configure les événements
+- `onDateChange(callback)` : S'abonne aux changements de date
+- `getCurrentDate()` : Récupère la date actuelle
+- `getCurrentDateFormatted()` : Récupère la date formatée (YYYY-MM-DD)
+
+**Comportement :**
+- Navigation par année garde le jour et le mois
+- Clic sur la date centrale ouvre un calendrier natif
+- Toutes les vues se synchronisent automatiquement
+- Responsive design avec adaptation mobile
+
 ## 🔗 Comment utiliser
 
 ### Import simple

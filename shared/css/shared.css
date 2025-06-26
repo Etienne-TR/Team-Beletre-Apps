@@ -83,8 +83,8 @@ select {
     color: var(--text-color);
     border: 1px solid var(--border-color);
     border-radius: 6px;
-    padding: 0.75rem 2.5rem 0.75rem 1rem; /* Même padding que .input-style */
-    height: auto; /* Hauteur automatique pour correspondre aux champs de texte */
+    padding: 0 1rem; /* Même padding horizontal que les boutons */
+    height: 2.4rem; /* Même hauteur que les boutons */
     box-sizing: border-box;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -321,7 +321,9 @@ select {
 }
 
 /* Style de base pour les boutons */
-.btn {
+.btn,
+.date-nav-arrow,
+.date-display-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -529,4 +531,21 @@ select {
 
 @media (max-width: 480px) {
     /* Styles supprimés pour éviter les conflits avec le header */
+}
+
+/* Conteneur utilitaire pour groupes de boutons */
+.btn-group-container {
+    display: flex;
+    flex-direction: row;
+    gap: 0.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+    .btn-group-container {
+        flex-direction: column;
+        gap: 0.4rem;
+        align-items: stretch;
+    }
 } 

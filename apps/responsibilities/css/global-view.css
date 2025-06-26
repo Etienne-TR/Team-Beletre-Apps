@@ -160,16 +160,6 @@
         justify-content: center;
     }
     
-    .filters-spacer {
-        display: none;
-    }
-    
-    .period-buttons {
-        justify-content: center;
-        align-self: center;
-        margin: 0;
-    }
-    
     .type-buttons {
         justify-content: center;
         align-self: center;
@@ -181,19 +171,10 @@
     /* margin-right: auto; */ /* Supprimé pour le centrage par flexbox */
 }
 
-.period-buttons {
-    /* margin-left: auto; */ /* Supprimé pour le centrage par flexbox */
-}
-
 .filters {
     padding-left: 1rem;
     padding-right: 1rem;
-    justify-content: space-between;
-}
-
-/* Élément qui prend toute la place disponible entre les éléments alignés à gauche et à droite */
-.filters-spacer {
-    flex: 1;
+    justify-content: center;
 }
 
 .responsibility-description {

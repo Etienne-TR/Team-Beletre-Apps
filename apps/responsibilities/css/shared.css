@@ -55,7 +55,7 @@ body {
 }
 
 /* Containers pour les groupes de boutons */
-.period-buttons, .type-buttons {
+.type-buttons {
     display: flex;
     gap: 0.5rem;
 }
@@ -71,17 +71,18 @@ body {
 @media (max-width: 768px) {
     .filters {
         flex-direction: column;
-        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
     }
     
-    .period-buttons, .type-buttons {
+    .type-buttons {
         justify-content: center;
-        align-self: center;
+        flex-wrap: wrap;
     }
     
-    .activity-selector {
-        min-width: 100px;
-        font-size: 0.9rem;
+    .person-selector {
+        min-width: 100%;
+        max-width: none;
     }
 }
 

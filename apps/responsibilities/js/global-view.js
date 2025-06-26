@@ -21,8 +21,6 @@ import {
 
 // Variables spécifiques à la vue globale
 let selectedType = null; // Type sélectionné (sera défini dynamiquement)
-let dataCache = {}; // Cache pour les données par année
-let allYearsData = {}; // Données consolidées pour toutes les années
 let availableTypes = []; // Types d'activités disponibles
 
 console.log('=== INITIALISATION GLOBAL-VIEW ===');
@@ -38,14 +36,8 @@ document.addEventListener('DOMContentLoaded', async function() {
             const filters = document.createElement('div');
             filters.className = 'filters';
             filters.innerHTML = `
-                <div class="type-buttons">
+                <div class="type-buttons btn-group-container">
                     <!-- Les boutons de type seront générés dynamiquement -->
-                </div>
-                <div class="filters-spacer"></div>
-                <div class="period-buttons">
-                    <button class="btn selection-btn selection-btn--year" data-date="2024-06-01" data-label="1er juin 2024">2024</button>
-                    <button class="btn selection-btn selection-btn--year active" data-date="2025-06-01" data-label="1er juin 2025">2025</button>
-                    <button class="btn selection-btn selection-btn--year" data-date="2026-06-01" data-label="1er juin 2026">2026</button>
                 </div>
             `;
             
@@ -71,8 +63,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             // Charger les types d'activités disponibles
             await loadActivityTypes();
             
-            // Précharger toutes les années et afficher les données actuelles
-            await preloadAllYears();
+            // Afficher les données pour la sélection actuelle
             displayDataForCurrentSelection();
         }
     } catch (error) {
@@ -83,29 +74,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 });
 
 function setupEventListeners() {
-    // Gestion des boutons de période
-    document.querySelectorAll('.selection-btn--year').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const date = this.dataset.date;
-            const label = this.dataset.label;
-            selectDate(date, label, this);
-        });
-    });
-    
     // Les boutons de type sont maintenant générés dynamiquement dans generateTypeButtons()
-}
-
-async function selectDate(date, label, buttonElement = null) {
-    console.log(`Sélection de la date: ${date} (${label})`);
-    // Mettre à jour la date globale depuis le module shared
-    window.currentDate = date;
-    
-    // Mettre à jour l'état visuel des boutons
-    document.querySelectorAll('.selection-btn--year').forEach(btn => btn.classList.remove('active'));
-    if (buttonElement) buttonElement.classList.add('active');
-    
-    // Afficher les données pour la nouvelle sélection
-    displayDataForCurrentSelection();
 }
 
 function selectType(type, buttonElement = null) {
@@ -137,76 +106,6 @@ function displayData(data) {
     });
 }
 
-async function preloadAllYears() {
-    const years = ['2024', '2025', '2026'];
-    const promises = years.map(year => loadYearData(year));
-    
-    try {
-        await Promise.all(promises);
-        console.log('Toutes les années ont été préchargées');
-    } catch (error) {
-        console.error('Erreur lors du préchargement des années:', error);
-        throw error;
-    }
-}
-
-async function loadYearData(year) {
-    if (dataCache[year]) {
-        console.log(`Données pour ${year} déjà en cache`);
-        return dataCache[year];
-    }
-    
-    try {
-        const date = `${year}-06-01`;
-        const periodForAPI = `${year}-06`;
-        const url = `../../api/responsibilities/global-view.php?action=get_responsibilities&period=${periodForAPI}&date=${date}`;
-        
-        console.log(`Chargement des données pour ${year}...`);
-        
-        const data = await apiRequest(url);
-        const yearData = data.data.activities || [];
-        
-        dataCache[year] = yearData;
-        allYearsData[year] = yearData;
-        
-        console.log(`Données pour ${year} chargées: ${yearData.length} activités`);
-        return yearData;
-        
-    } catch (error) {
-        console.error(`Erreur lors du chargement de ${year}:`, error);
-        // En cas d'erreur, on met un tableau vide pour éviter de recharger
-        dataCache[year] = [];
-        allYearsData[year] = [];
-        throw error;
-    }
-}
-
-function displayDataForCurrentSelection() {
-    const year = window.currentDate.substring(0, 4);
-    const yearData = allYearsData[year] || [];
-    
-    // Filtrer par type sélectionné
-    const filteredData = yearData.filter(activity => activity.type === selectedType);
-    
-    // Appel direct à displayData qui gère maintenant l'état vide
-    displayData(filteredData);
-    
-    console.log(`Affichage pour ${year}, type ${selectedType}: ${filteredData.length} activités`);
-}
-
-function showEmptyState() {
-    document.getElementById('emptyState').style.display = 'block';
-    document.getElementById('activitiesContainer').style.display = 'none';
-}
-
-function hideEmptyState() {
-    document.getElementById('emptyState').style.display = 'none';
-    document.getElementById('activitiesContainer').style.display = 'grid';
-}
-
-/**
- * Charger les types d'activités disponibles depuis l'API
- */
 async function loadActivityTypes() {
     try {
         const url = '../../api/responsibilities/global-view.php?action=get_activity_types';
@@ -312,4 +211,49 @@ function createTypeButtons(types) {
     });
     
     console.log(`${types.length} boutons de type générés`);
+}
+
+function displayDataForCurrentSelection() {
+    if (!selectedType) {
+        console.log('Aucun type sélectionné');
+        displayData([]);
+        return;
+    }
+    
+    // Charger directement les données pour le type sélectionné
+    loadDataForType(selectedType);
+}
+
+async function loadDataForType(type) {
+    try {
+        const currentDate = window.currentDate;
+        const url = `../../api/responsibilities/global-view.php?action=get_responsibilities&date=${currentDate}`;
+        
+        console.log(`Chargement des données pour le type ${type} à la date ${currentDate}...`);
+        
+        const data = await apiRequest(url);
+        const activities = data.data.activities || [];
+        
+        // Filtrer par type sélectionné
+        const filteredData = activities.filter(activity => activity.type === type);
+        
+        // Afficher les données
+        displayData(filteredData);
+        
+        console.log(`Affichage pour ${currentDate}, type ${type}: ${filteredData.length} activités`);
+        
+    } catch (error) {
+        console.error(`Erreur lors du chargement des données pour le type ${type}:`, error);
+        displayData([]); // Afficher un état vide en cas d'erreur
+    }
+}
+
+function showEmptyState() {
+    document.getElementById('emptyState').style.display = 'block';
+    document.getElementById('activitiesContainer').style.display = 'none';
+}
+
+function hideEmptyState() {
+    document.getElementById('emptyState').style.display = 'none';
+    document.getElementById('activitiesContainer').style.display = 'grid';
 } 

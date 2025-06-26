@@ -205,10 +205,6 @@
         justify-content: center;
     }
     
-    .filters-spacer {
-        display: none;
-    }
-    
     .person-selector {
         align-self: center;
         width: 100%;
@@ -219,13 +215,6 @@
         order: 2;
         justify-content: center;
         align-self: center;
-    }
-    
-    .period-buttons {
-        order: 3;
-        justify-content: center;
-        align-self: center;
-        margin: 0;
     }
 }
 
@@ -242,12 +231,7 @@
     padding: 1rem 1rem;
     background: var(--light-gray);
     border-bottom: 1px solid var(--border-color);
-    justify-content: space-between; /* Aligne les éléments à gauche et à droite en desktop */
-}
-
-/* Élément qui prend toute la place disponible entre les éléments alignés à gauche et à droite */
-.filters-spacer {
-    flex: 1;
+    justify-content: center;
 }
 
 .person-selector {

@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Responsabilités - Team Apps</title>
+    <title>Administration - Team Apps</title>
     <link rel="stylesheet" href="../../shared/css/app-header.css">
     <link rel="stylesheet" href="../../shared/css/shared.css">
     <link rel="stylesheet" href="css/shared.css">
 </head>
 <body>
     <div id="loadingSection">
-        <div class="loading">Chargement des tâches et responsabilités...</div>
+        <div class="loading">Chargement de l'administration...</div>
     </div>
     
     <div id="authError" style="display: none;">
@@ -25,7 +25,7 @@
     <div id="homePage" style="display: none;">
         <header class="app-header">
             <div class="header-content">
-                <h1 class="heading-title">📋 Tâches et responsabilités</h1>
+                <h1 class="heading-title">⚙️ Administration</h1>
                 <div class="header-info">
                     <div class="user-info" id="currentUser"></div>
                     <a href="../../" class="back-link btn btn-outline">← Toutes les appli</a>
@@ -35,19 +35,19 @@
 
         <main class="main-content">
             <div class="views-container">
-                <a href="global-view.html" class="view-card card">
-                    <div class="view-card-icon">🗺️</div>
+                <a href="scripts/database/add_timestamp_columns.php" class="view-card card">
+                    <div class="view-card-icon">⏰</div>
                     <div class="view-card-content">
-                        <h2>Vue d'ensemble</h2>
-                        <p>Visualiser toutes les activités et leurs responsables.</p>
+                        <h2>Ajouter les colonnes timestamp</h2>
+                        <p>Ajoute les colonnes last_modified à toutes les tables pour la synchronisation.</p>
                     </div>
                 </a>
                 
-                <a href="individual-view.html" class="view-card card">
-                    <div class="view-card-icon">👤</div>
+                <a href="scripts/database/generate_triggers.php" class="view-card card">
+                    <div class="view-card-icon">🔗</div>
                     <div class="view-card-content">
-                        <h2>Fiches de poste</h2>
-                        <p>Consulter les responsabilités et tâches par personne.</p>
+                        <h2>Générer les triggers</h2>
+                        <p>Génère automatiquement les triggers pour propager les timestamps entre tables liées.</p>
                     </div>
                 </a>
             </div>
@@ -56,4 +56,4 @@
 
     <script type="module" src="js/index.js"></script>
 </body>
-</html>
+</html> 

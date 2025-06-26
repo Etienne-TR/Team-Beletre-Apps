@@ -12,18 +12,19 @@ import {
 } from './shared.js';
 import { createAppHeader } from '../../../modules/ui/app-header.js';
 import { updateUserInfo } from '../../../modules/ui/user-info.js';
-import { formatActivityNameEscaped } from '../../../modules/utils/activity-formatter.js';
+import { formatActivityNameEscaped, formatTypeName } from '../../../modules/utils/activity-formatter.js';
 import { formatActivityDescription } from '../../../modules/utils/activity-description.js';
 import { 
-    createActivityWithTasksCard,
-    createSimpleTaskCard
+    createActivityCard,
+    createTaskCard,
+    createActivityWithTasksCard
 } from './activity-card.js';
+import { cache } from '../../../modules/cache/cache.js';
 
 // Variables spécifiques à la vue individuelle
-let selectedPersonId = null;
-let selectedContent = 'responsibilities'; // 'responsibilities' ou 'tasks'
-let workersData = {}; // Cache des travailleurs par année
-let individualDataCache = {}; // Cache des données individuelles
+let selectedPersonId = null; // ID de la personne sélectionnée
+let selectedContent = 'responsibilities'; // Type de contenu sélectionné
+let workersData = {}; // Cache des données individuelles
 
 // Initialisation
 document.addEventListener('DOMContentLoaded', async function() {
@@ -41,14 +42,9 @@ document.addEventListener('DOMContentLoaded', async function() {
                         <option value="">Choisir une personne...</option>
                     </select>
                 </div>
-                <div class="content-buttons">
+                <div class="content-buttons btn-group-container">
                     <button class="btn selection-btn selection-btn--content active" data-content="responsibilities">En responsabilité</button>
                     <button class="btn selection-btn selection-btn--content" data-content="tasks">Autres</button>
-                </div>
-                <div class="period-buttons">
-                    <button class="btn selection-btn selection-btn--year" data-date="2024-06-01" data-label="1er juin 2024">2024</button>
-                    <button class="btn selection-btn selection-btn--year active" data-date="2025-06-01" data-label="1er juin 2025">2025</button>
-                    <button class="btn selection-btn selection-btn--year" data-date="2026-06-01" data-label="1er juin 2026">2026</button>
                 </div>
             `;
             
@@ -82,15 +78,6 @@ document.addEventListener('DOMContentLoaded', async function() {
 });
 
 function setupEventListeners() {
-    // Gestion des boutons de période
-    document.querySelectorAll('.selection-btn--year').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const date = this.dataset.date;
-            const label = this.dataset.label;
-            selectIndividualDate(date, label, this);
-        });
-    });
-    
     // Gestion des boutons de contenu
     document.querySelectorAll('.selection-btn--content').forEach(btn => {
         btn.addEventListener('click', function() {
@@ -118,23 +105,6 @@ function setupEventListeners() {
     }
 }
 
-async function selectIndividualDate(date, label, buttonElement = null) {
-    console.log(`Sélection de la date individuelle: ${date} (${label})`);
-    window.currentDate = date;
-    
-    // Mettre à jour l'état visuel des boutons
-    document.querySelectorAll('.selection-btn--year').forEach(btn => btn.classList.remove('active'));
-    if (buttonElement) buttonElement.classList.add('active');
-    
-    // Charger les travailleurs pour la nouvelle date
-    await loadWorkersForDate(date);
-    
-    // Si une personne est sélectionnée, recharger ses données
-    if (selectedPersonId) {
-        await loadPersonData(selectedPersonId, date);
-    }
-}
-
 function selectContent(content, buttonElement = null) {
     console.log(`Sélection du contenu: ${content}`);
     selectedContent = content;
@@ -153,11 +123,22 @@ async function loadWorkersForDate(date) {
     console.log('Chargement des travailleurs pour la date:', date);
     
     try {
+        // Vérifier le cache d'abord
+        if (cache.api.workers.has(date)) {
+            console.log('Travailleurs en cache pour la date:', date);
+            const workers = cache.api.workers.get(date);
+            workersData[date] = workers; // Garder la compatibilité avec le code existant
+            populatePersonSelect(workers);
+            return;
+        }
+        
         const url = `../../api/responsibilities/individual-view.php?action=get_workers&date=${date}`;
         const data = await apiRequest(url);
         const workers = data.data.workers;
         
-        workersData[date] = workers;
+        // Stocker dans le cache global
+        cache.api.workers.set(date, workers);
+        workersData[date] = workers; // Garder la compatibilité avec le code existant
         console.log('Travailleurs chargés:', workers);
         
         populatePersonSelect(workers);
@@ -277,9 +258,9 @@ async function loadPersonData(userId, date) {
 async function loadPersonActivities(userId, date) {
     const cacheKey = `${userId}-${date}-${selectedContent}`;
     
-    if (individualDataCache[cacheKey]) {
+    if (cache.api.activities.has(cacheKey)) {
         console.log('Données d\'activités en cache pour:', cacheKey);
-        return individualDataCache[cacheKey];
+        return cache.api.activities.get(cacheKey);
     }
     
     try {
@@ -287,7 +268,7 @@ async function loadPersonActivities(userId, date) {
         const data = await apiRequest(url);
         const activities = data.data.activities || [];
         
-        individualDataCache[cacheKey] = activities;
+        cache.api.activities.set(cacheKey, activities);
         console.log('Activités chargées pour l\'utilisateur:', activities);
         
         return activities;
@@ -301,9 +282,9 @@ async function loadPersonActivities(userId, date) {
 async function loadPersonOtherActivities(userId, date) {
     const cacheKey = `${userId}-${date}-${selectedContent}`;
     
-    if (individualDataCache[cacheKey]) {
+    if (cache.api.activities.has(cacheKey)) {
         console.log('Données d\'activités en cache pour:', cacheKey);
-        return individualDataCache[cacheKey];
+        return cache.api.activities.get(cacheKey);
     }
     
     try {
@@ -311,7 +292,7 @@ async function loadPersonOtherActivities(userId, date) {
         const data = await apiRequest(url);
         const activities = data.data.activities || [];
         
-        individualDataCache[cacheKey] = activities;
+        cache.api.activities.set(cacheKey, activities);
         console.log('Activités chargées pour l\'utilisateur:', activities);
         
         return activities;
@@ -328,7 +309,7 @@ function displaySelectedContent() {
     }
     
     const cacheKey = `${selectedPersonId}-${window.currentDate}-${selectedContent}`;
-    const activitiesData = individualDataCache[cacheKey] || [];
+    const activitiesData = cache.api.activities.get(cacheKey) || [];
     
     const container = document.getElementById('individualActivitiesContainer');
     container.innerHTML = '';
