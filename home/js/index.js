@@ -1,4 +1,4 @@
-import { checkAuth } from '../../shared/shared.js';
+import { checkAuth } from '../../shared/js/shared.js';
 import { initializeUserInfo } from '../../modules/ui/user-info.js';
 
 // Gestion de la page d'accueil Team Apps

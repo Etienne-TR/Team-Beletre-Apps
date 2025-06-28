@@ -20,11 +20,25 @@ import {
     createActivityWithTasksCard
 } from './activity-card.js';
 import { cache } from '../../../modules/cache/cache.js';
+import { DateSelector } from '../../../modules/ui/date-selector.js';
 
 // Variables spécifiques à la vue individuelle
 let selectedPersonId = null; // ID de la personne sélectionnée
 let selectedContent = 'responsibilities'; // Type de contenu sélectionné
 let workersData = {}; // Cache des données individuelles
+let dateSelector = null; // Instance du sélecteur de date
+
+/**
+ * Formatage de date au format API (YYYY-MM-DD)
+ */
+function formatDateAPI(date) {
+    if (!date) return '';
+    if (typeof date === 'string' && date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        return date; // Déjà au bon format
+    }
+    const d = new Date(date);
+    return d.toISOString().slice(0, 10);
+}
 
 // Initialisation
 document.addEventListener('DOMContentLoaded', async function() {
@@ -33,6 +47,12 @@ document.addEventListener('DOMContentLoaded', async function() {
     try {
         const authSuccess = await checkAuthAndLoadData();
         if (authSuccess) {
+            // S'assurer que window.currentDate est défini correctement
+            if (!window.currentDate || typeof window.currentDate !== 'string') {
+                window.currentDate = formatDateAPI(new Date());
+                console.log('window.currentDate initialisé à:', window.currentDate);
+            }
+            
             // Créer les filtres
             const filters = document.createElement('div');
             filters.className = 'filters';
@@ -47,6 +67,10 @@ document.addEventListener('DOMContentLoaded', async function() {
                     <button class="btn selection-btn selection-btn--content" data-content="tasks">Autres</button>
                 </div>
             `;
+            // Ajout dynamique du conteneur du sélecteur de date à la fin des filtres
+            const dateSelectorContainer = document.createElement('div');
+            dateSelectorContainer.id = 'dateSelectorContainer';
+            filters.appendChild(dateSelectorContainer);
             
             // Créer le header dynamiquement avec les filtres
             const headerContainer = document.getElementById('appHeader');
@@ -58,6 +82,20 @@ document.addEventListener('DOMContentLoaded', async function() {
                 filters
             );
             headerContainer.appendChild(header);
+            
+            // Initialiser le sélecteur de date
+            dateSelector = new DateSelector(dateSelectorContainer, {
+                initialDate: window.currentDate || new Date(),
+                onDateChange: (newDate) => {
+                    console.log('DateSelector.onDateChange - nouvelle date:', newDate);
+                    window.currentDate = newDate;
+                    loadWorkersForDate(newDate).then(() => {
+                        if (selectedPersonId) {
+                            loadPersonData(selectedPersonId, newDate);
+                        }
+                    });
+                }
+            });
             
             // Mettre à jour les informations utilisateur après la création du header
             updateUserInfo(getCurrentUser());
@@ -120,32 +158,71 @@ function selectContent(content, buttonElement = null) {
 }
 
 async function loadWorkersForDate(date) {
-    console.log('Chargement des travailleurs pour la date:', date);
+    // Toujours envoyer la date au format YYYY-MM-DD
+    const dateStr = formatDateAPI(date);
+    console.log('Chargement des travailleurs pour la date:', dateStr);
     
     try {
         // Vérifier le cache d'abord
-        if (cache.api.workers.has(date)) {
-            console.log('Travailleurs en cache pour la date:', date);
-            const workers = cache.api.workers.get(date);
-            workersData[date] = workers; // Garder la compatibilité avec le code existant
+        if (cache.api.workers.has(dateStr)) {
+            console.log('Travailleurs en cache pour la date:', dateStr);
+            const workers = cache.api.workers.get(dateStr);
+            workersData[dateStr] = workers; // Garder la compatibilité avec le code existant
             populatePersonSelect(workers);
             return;
         }
         
-        const url = `../../api/responsibilities/individual-view.php?action=get_workers&date=${date}`;
-        const data = await apiRequest(url);
-        const workers = data.data.workers;
+        // Construction de l'URL d'API
+        console.log('Appel API get_workers avec date=', dateStr);
+        const url = `../../api/responsibilities/individual-view.php?action=get_workers&date=${dateStr}`;
         
-        // Stocker dans le cache global
-        cache.api.workers.set(date, workers);
-        workersData[date] = workers; // Garder la compatibilité avec le code existant
-        console.log('Travailleurs chargés:', workers);
-        
-        populatePersonSelect(workers);
+        // Appel API
+        try {
+            const data = await apiRequest(url);
+            
+            // Vérifier la structure de la réponse
+            if (!data || !data.data || !Array.isArray(data.data.workers)) {
+                console.error('Structure de réponse invalide:', data);
+                workersData[dateStr] = []; // Initialiser comme tableau vide en cas d'erreur
+                populatePersonSelect([]);
+                return;
+            }
+            
+            const workers = data.data.workers;
+            
+            // Stocker dans le cache global
+            cache.api.workers.set(dateStr, workers);
+            workersData[dateStr] = workers; // Garder la compatibilité avec le code existant
+            console.log(`${workers.length} travailleurs chargés pour la date ${dateStr}:`, workers);
+            
+            // Vérifier si la personne sélectionnée existe toujours à cette date
+            if (selectedPersonId) {
+                const userExists = workers.some(worker => String(worker.id) === String(selectedPersonId));
+                if (!userExists) {
+                    console.log(`L'utilisateur ${selectedPersonId} n'existe pas à la date ${dateStr}`);
+                    showMessage(`La personne sélectionnée n'a pas de contrat actif à cette date`, 'warning');
+                    selectedPersonId = null; // Réinitialiser la sélection si l'utilisateur n'existe plus à cette date
+                }
+            }
+            
+            populatePersonSelect(workers);
+            
+        } catch (apiError) {
+            console.error('Erreur API lors du chargement des travailleurs:', apiError);
+            showMessage('Erreur lors de l\'appel API: ' + apiError.message, 'error');
+            
+            // Initialiser avec un tableau vide en cas d'erreur
+            workersData[dateStr] = [];
+            populatePersonSelect([]);
+        }
         
     } catch (error) {
         console.error('Erreur lors du chargement des travailleurs:', error);
         showMessage('Erreur lors du chargement des travailleurs: ' + error.message, 'error');
+        
+        // Initialiser avec un tableau vide en cas d'erreur
+        workersData[dateStr] = [];
+        populatePersonSelect([]);
     }
 }
 
@@ -207,46 +284,53 @@ function adjustSelectWidth(select) {
     tempElement.style.padding = window.getComputedStyle(select).padding;
     tempElement.style.border = window.getComputedStyle(select).border;
     tempElement.style.boxSizing = 'border-box';
-    
     document.body.appendChild(tempElement);
-    
     let maxWidth = 0;
-    
-    // Mesurer chaque option
     for (let option of select.options) {
         tempElement.textContent = option.textContent;
         const optionWidth = tempElement.offsetWidth;
         maxWidth = Math.max(maxWidth, optionWidth);
     }
-    
-    // Nettoyer l'élément temporaire
     document.body.removeChild(tempElement);
-    
-    // Appliquer la largeur calculée avec des limites
-    const minWidth = 200; // Largeur minimale
-    const maxAllowedWidth = 400; // Largeur maximale
-    const calculatedWidth = Math.max(minWidth, Math.min(maxWidth + 50, maxAllowedWidth)); // +50 pour l'icône et le padding
-    
-    select.style.width = `${calculatedWidth}px`;
-    console.log(`Largeur du select ajustée à ${calculatedWidth}px`);
+    // Largeur min 150px, max = largeur du parent
+    const minWidth = 150;
+    const parent = select.parentElement;
+    const parentWidth = parent ? parent.offsetWidth : 400;
+    const calculatedWidth = Math.max(minWidth, Math.min(maxWidth + 50, parentWidth));
+    select.style.width = calculatedWidth + 'px';
+    select.style.maxWidth = '100%';
 }
 
 async function loadPersonData(userId, date) {
-    console.log(`Chargement des données pour l'utilisateur ${userId} à la date ${date}`);
+    const dateStr = date instanceof Date ? date.toISOString().slice(0, 10) : date;
+    console.log(`Chargement des données pour l'utilisateur ${userId} à la date ${dateStr}`);
     
     try {
-        // Charger les données selon le contenu sélectionné
-        let activitiesData = [];
+        // Vérifions d'abord que l'utilisateur existe encore à cette date
+        const workers = workersData[dateStr] || [];
+        const userExists = workers.some(worker => String(worker.id) === String(userId));
         
-        if (selectedContent === 'responsibilities') {
-            // Charger les activités dont la personne est responsable
-            activitiesData = await loadPersonActivities(userId, date);
-        } else if (selectedContent === 'tasks') {
-            // Charger les activités dont la personne n'est pas responsable mais participe à ses tâches
-            activitiesData = await loadPersonOtherActivities(userId, date);
+        if (!userExists) {
+            console.warn(`L'utilisateur ${userId} n'existe pas dans la liste des travailleurs pour la date ${dateStr}`);
+            clearIndividualActivities();
+            return;
         }
         
-        // Afficher le contenu selon la sélection
+        // Charger les données selon le contenu sélectionné
+        let activitiesData = [];
+        if (selectedContent === 'responsibilities') {
+            activitiesData = await loadWorkerActivitiesResponsible(userId, dateStr);
+        } else if (selectedContent === 'tasks') {
+            activitiesData = await loadWorkerActivitiesNotResponsible(userId, dateStr);
+        }
+        
+        // S'assurer que window.currentDate est correctement défini
+        if (window.currentDate !== dateStr) {
+            console.log(`Mise à jour de la date courante: ${dateStr} (était ${window.currentDate})`);
+            window.currentDate = dateStr;
+        }
+        
+        // Afficher les données chargées
         displaySelectedContent();
         
     } catch (error) {
@@ -255,78 +339,82 @@ async function loadPersonData(userId, date) {
     }
 }
 
-async function loadPersonActivities(userId, date) {
-    const cacheKey = `${userId}-${date}-${selectedContent}`;
-    
+async function loadWorkerActivitiesResponsible(userId, date) {
+    const dateStr = date instanceof Date ? date.toISOString().slice(0, 10) : date;
+    const cacheKey = `${userId}-${dateStr}-responsibilities`;
     if (cache.api.activities.has(cacheKey)) {
         console.log('Données d\'activités en cache pour:', cacheKey);
         return cache.api.activities.get(cacheKey);
     }
-    
     try {
-        const url = `../../api/responsibilities/individual-view.php?action=get_person_activities&user_id=${userId}&date=${date}`;
+        const url = `../../api/responsibilities/individual-view.php?action=get_worker_activities&user_id=${userId}&date=${dateStr}&is_responsible=true`;
         const data = await apiRequest(url);
         const activities = data.data.activities || [];
-        
         cache.api.activities.set(cacheKey, activities);
-        console.log('Activités chargées pour l\'utilisateur:', activities);
-        
+        console.log('Activités (responsable) chargées pour l\'utilisateur:', activities);
         return activities;
-        
     } catch (error) {
-        console.error('Erreur lors du chargement des activités:', error);
+        console.error('Erreur lors du chargement des activités (responsable):', error);
         throw error;
     }
 }
 
-async function loadPersonOtherActivities(userId, date) {
-    const cacheKey = `${userId}-${date}-${selectedContent}`;
-    
+async function loadWorkerActivitiesNotResponsible(userId, date) {
+    const dateStr = date instanceof Date ? date.toISOString().slice(0, 10) : date;
+    const cacheKey = `${userId}-${dateStr}-tasks`;
     if (cache.api.activities.has(cacheKey)) {
         console.log('Données d\'activités en cache pour:', cacheKey);
         return cache.api.activities.get(cacheKey);
     }
-    
     try {
-        const url = `../../api/responsibilities/individual-view.php?action=get_person_other_activities&user_id=${userId}&date=${date}`;
+        const url = `../../api/responsibilities/individual-view.php?action=get_worker_activities&user_id=${userId}&date=${dateStr}&is_responsible=false`;
         const data = await apiRequest(url);
         const activities = data.data.activities || [];
-        
         cache.api.activities.set(cacheKey, activities);
-        console.log('Activités chargées pour l\'utilisateur:', activities);
-        
+        console.log('Activités (non responsable) chargées pour l\'utilisateur:', activities);
         return activities;
-        
     } catch (error) {
-        console.error('Erreur lors du chargement des activités:', error);
+        console.error('Erreur lors du chargement des activités (non responsable):', error);
         throw error;
     }
 }
 
 function displaySelectedContent() {
     if (!selectedPersonId || !window.currentDate) {
+        console.log('Aucune personne ou date sélectionnée, rien à afficher');
         return;
     }
     
+    console.log(`Affichage du contenu pour ${selectedPersonId} à la date ${window.currentDate}, type: ${selectedContent}`);
+    
+    // Récupérer les données d'activités du cache
     const cacheKey = `${selectedPersonId}-${window.currentDate}-${selectedContent}`;
     const activitiesData = cache.api.activities.get(cacheKey) || [];
     
+    // Effacer le conteneur actuel
     const container = document.getElementById('individualActivitiesContainer');
     container.innerHTML = '';
     
     // Trouver les informations de l'utilisateur
-    const workers = workersData[window.currentDate] || [];
-    const userInfo = workers.find(worker => worker.id == selectedPersonId);
+    const dateStr = window.currentDate;
+    const workers = workersData[dateStr] || [];
+    
+    // Vérifier si l'utilisateur existe à cette date
+    const userInfo = workers.find(worker => String(worker.id) === String(selectedPersonId));
     
     if (!userInfo) {
-        showMessage('Informations utilisateur non trouvées', 'error');
+        console.warn(`Informations utilisateur non trouvées pour l'ID: ${selectedPersonId} à la date ${dateStr}`);
+        console.log('Liste des travailleurs disponibles:', workers.map(w => w.id));
+        clearIndividualActivities();
         return;
     }
     
     let hasContent = false;
     
-    // Afficher selon la sélection - même format pour les deux filtres
-    if (activitiesData.length > 0) {
+    // Afficher les activités
+    if (activitiesData && activitiesData.length > 0) {
+        console.log(`Affichage de ${activitiesData.length} activités pour l'utilisateur ${selectedPersonId}`);
+        
         activitiesData.forEach(item => {
             const card = createActivityWithTasksCard(
                 item.activity, 
@@ -338,6 +426,8 @@ function displaySelectedContent() {
         });
         
         hasContent = true;
+    } else {
+        console.log(`Aucune activité trouvée pour l'utilisateur ${selectedPersonId} à la date ${dateStr}`);
     }
     
     // Message si aucune donnée pour le contenu sélectionné
@@ -355,7 +445,6 @@ function displaySelectedContent() {
         const emptyTitle = document.createElement('h3');
         const contentType = selectedContent === 'responsibilities' ? 'activité dont vous êtes responsable' : 'activité où vous participez';
         emptyTitle.textContent = `Aucune ${contentType} trouvée pour cette personne à cette période.`;
-        
         emptyContent.appendChild(emptyIcon);
         emptyContent.appendChild(emptyTitle);
         emptyMessage.appendChild(emptyContent);
@@ -369,7 +458,6 @@ function displaySelectedContent() {
 function clearIndividualActivities() {
     const container = document.getElementById('individualActivitiesContainer');
     container.innerHTML = '';
-    
     // Afficher l'état vide
     document.getElementById('individualEmptyState').style.display = 'block';
-} 
+}

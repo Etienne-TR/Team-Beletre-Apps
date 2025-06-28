@@ -18,10 +18,13 @@ import {
     createActivityCard,
     createTaskCard
 } from './activity-card.js';
+import { DateSelector } from '../../../modules/ui/date-selector.js';
 
 // Variables spécifiques à la vue globale
 let selectedType = null; // Type sélectionné (sera défini dynamiquement)
 let availableTypes = []; // Types d'activités disponibles
+let dateSelector = null; // Instance du sélecteur de date
+let currentDate = new Date(); // Date courante pour la vue globale
 
 console.log('=== INITIALISATION GLOBAL-VIEW ===');
 console.log('selectedType initial:', selectedType);
@@ -40,6 +43,10 @@ document.addEventListener('DOMContentLoaded', async function() {
                     <!-- Les boutons de type seront générés dynamiquement -->
                 </div>
             `;
+            // Ajout dynamique du conteneur du sélecteur de date à la fin des filtres
+            const dateSelectorContainer = document.createElement('div');
+            dateSelectorContainer.id = 'dateSelectorContainer';
+            filters.appendChild(dateSelectorContainer);
             
             // Créer le header dynamiquement avec les filtres
             const headerContainer = document.getElementById('appHeader');
@@ -52,6 +59,19 @@ document.addEventListener('DOMContentLoaded', async function() {
             );
             headerContainer.appendChild(header);
             
+            // Initialiser le sélecteur de date
+            dateSelector = new DateSelector(dateSelectorContainer, {
+                initialDate: currentDate,
+                onDateChange: (newDate) => {
+                    if (!selectedType) return; // Ne rien faire si pas de type sélectionné
+                    currentDate = newDate;
+                    displayDataForCurrentSelection();
+                }
+            });
+            
+            // Désactiver les boutons du sélecteur tant que les types ne sont pas chargés
+            Array.from(dateSelectorContainer.querySelectorAll('button')).forEach(btn => btn.disabled = true);
+            
             // Mettre à jour les informations utilisateur après la création du header
             updateUserInfo(getCurrentUser());
             
@@ -62,6 +82,9 @@ document.addEventListener('DOMContentLoaded', async function() {
             
             // Charger les types d'activités disponibles
             await loadActivityTypes();
+            
+            // Réactiver les boutons après chargement des types
+            Array.from(dateSelectorContainer.querySelectorAll('button')).forEach(btn => btn.disabled = false);
             
             // Afficher les données pour la sélection actuelle
             displayDataForCurrentSelection();
@@ -220,31 +243,20 @@ function displayDataForCurrentSelection() {
         return;
     }
     
-    // Charger directement les données pour le type sélectionné
-    loadDataForType(selectedType);
+    // Appeler loadDataForType avec la date courante
+    loadDataForType(selectedType, currentDate);
 }
 
-async function loadDataForType(type) {
+async function loadDataForType(type, date) {
+    // S'assurer que la date est au format YYYY-MM-DD
+    const dateStr = date instanceof Date ? date.toISOString().slice(0, 10) : date;
     try {
-        const currentDate = window.currentDate;
-        const url = `../../api/responsibilities/global-view.php?action=get_responsibilities&date=${currentDate}`;
-        
-        console.log(`Chargement des données pour le type ${type} à la date ${currentDate}...`);
-        
+        const url = `../../api/responsibilities/global-view.php?action=get_responsibilities&type=${encodeURIComponent(type)}&date=${dateStr}`;
         const data = await apiRequest(url);
         const activities = data.data.activities || [];
-        
-        // Filtrer par type sélectionné
-        const filteredData = activities.filter(activity => activity.type === type);
-        
-        // Afficher les données
-        displayData(filteredData);
-        
-        console.log(`Affichage pour ${currentDate}, type ${type}: ${filteredData.length} activités`);
-        
+        displayData(activities);
     } catch (error) {
-        console.error(`Erreur lors du chargement des données pour le type ${type}:`, error);
-        displayData([]); // Afficher un état vide en cas d'erreur
+        showMessage('Erreur lors du chargement des activités: ' + error.message, 'error');
     }
 }
 

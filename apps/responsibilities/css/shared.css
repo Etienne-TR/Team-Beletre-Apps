@@ -37,11 +37,11 @@ body {
 /* Styles pour les filtres */
 .filters {
     background: var(--light-gray);
-    padding: 0.5rem 1rem;
+    padding: 0.3rem 1rem;
     border-top: 1px solid var(--border-color);
     display: flex;
     align-items: center;
-    gap: 1.5rem;
+    gap: 1rem;
     flex-wrap: wrap; /* Permet aux éléments de passer à la ligne sur mobile */
     justify-content: center; /* Centrer les éléments */
 }
@@ -52,6 +52,11 @@ body {
     border-color: var(--app-accent-color);
     color: white;
     font-weight: 600;
+}
+
+/* Style hover pour les boutons de sélection avec la couleur d'accentuation */
+.selection-btn:hover {
+    border-color: var(--app-accent-color);
 }
 
 /* Containers pour les groupes de boutons */
@@ -67,12 +72,22 @@ body {
     max-width: 400px; /* Largeur maximale pour éviter qu'il devienne trop large */
 }
 
+/* Style pour le sélecteur de worker avec la couleur d'accentuation */
+.person-selector .select-style:hover {
+    border-color: var(--app-accent-color);
+}
+
+.person-selector .select-style:focus {
+    border-color: var(--app-accent-color);
+    box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
     .filters {
         flex-direction: column;
         gap: 1rem;
-        padding: 1rem;
+        padding: 0.3rem 1rem;
     }
     
     .type-buttons {

@@ -7,6 +7,9 @@ import { createResponsibleBadge, createAssignmentBadge } from '../../../modules/
 import { initializeBackButtons } from '../../../modules/ui/app-header.js';
 import { updateUserInfo, loadAndUpdateUserInfo } from '../../../modules/ui/user-info.js';
 
+// Import des fonctions communes depuis le fichier shared global
+import { apiRequest, checkAuth } from '../../../shared/js/shared.js';
+
 // Variables globales partagées
 export let currentUser = null;
 export let currentDate = '2025-06-01'; // Date par défaut
@@ -28,23 +31,8 @@ function showAuthError() {
 async function checkAuthAndLoadData() {
     console.log('Vérification de l\'authentification...');
     try {
-        const authResponse = await fetch('../../api/auth.php', {
-            credentials: 'include'
-        });
-        
-        if (!authResponse.ok) {
-            throw new Error(`HTTP ${authResponse.status}: ${authResponse.statusText}`);
-        }
-        
-        const authResult = await authResponse.json();
-        
-        if (!authResult.success) {
-            console.log('Authentification échouée');
-            showAuthError();
-            return false;
-        }
-        
-        currentUser = authResult.user;
+        // Utiliser la fonction checkAuth du fichier shared global
+        currentUser = await checkAuth();
         
         // Utiliser le module partagé pour mettre à jour les informations utilisateur
         updateUserInfo(currentUser);
@@ -72,34 +60,6 @@ function handleApiError(error, context = '') {
     }
     
     showMessage(message, 'error');
-}
-
-/**
- * Effectuer une requête API avec gestion d'erreur
- */
-async function apiRequest(url, options = {}) {
-    try {
-        const response = await fetch(url, {
-            credentials: 'include',
-            ...options
-        });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-        
-        const data = await response.json();
-        
-        if (!data.success) {
-            throw new Error(data.message || 'Erreur serveur');
-        }
-        
-        return data;
-        
-    } catch (error) {
-        handleApiError(error, `pour ${url}`);
-        throw error;
-    }
 }
 
 /**

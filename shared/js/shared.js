@@ -19,7 +19,7 @@ export async function apiCall(endpoint, method = 'GET', data = null) {
         options.body = JSON.stringify(data);
     }
     
-    const response = await fetch(`api/${endpoint}`, options);
+    const response = await fetch(`/api/${endpoint}`, options);
     return await response.json();
 }
 
@@ -31,7 +31,7 @@ export async function apiCall(endpoint, method = 'GET', data = null) {
  */
 export async function apiRequest(endpoint, options = {}) {
     try {
-        const response = await fetch(`api/${endpoint}`, {
+        const response = await fetch(`/api/${endpoint}`, {
             credentials: 'include',
             ...options
         });
@@ -59,7 +59,8 @@ export async function apiRequest(endpoint, options = {}) {
  */
 export async function checkAuth() {
     try {
-        const response = await fetch('../api/auth.php', {
+        // Utiliser un chemin absolu pour fonctionner depuis tous les contextes
+        const response = await fetch('/api/auth.php', {
             credentials: 'include'
         });
         

@@ -199,20 +199,17 @@
     }
     
     .filters {
-        flex-direction: column;
-        gap: 0.75rem;
-        align-items: center;
-        justify-content: center;
+        padding: 0.5rem 1rem;
     }
     
     .person-selector {
-        align-self: center;
+        align-self: stretch;
         width: 100%;
-        max-width: 300px;
+        max-width: none;
     }
     
     .content-buttons {
-        order: 2;
+        width: 100%;
         justify-content: center;
         align-self: center;
     }
@@ -227,19 +224,40 @@
 .filters {
     display: flex;
     align-items: center;
-    gap: 1rem;
-    padding: 1rem 1rem;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
     background: var(--light-gray);
     border-bottom: 1px solid var(--border-color);
-    justify-content: center;
+    justify-content: flex-start;
+    flex-wrap: wrap;
 }
 
 .person-selector {
-    max-width: 200px; /* Limite la largeur du sélecteur */
+    max-width: 100%;
+    min-width: 150px;
+    flex: 0 1 auto;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+}
+
+.content-buttons {
+    flex: 0 1 auto;
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* Positionnement du sélecteur de date */
+#dateSelectorContainer {
+    margin-left: auto; /* Pousse le sélecteur de date à droite */
 }
 
 .activity-description {
     color: var(--text-muted);
     line-height: 1.5;
     margin-bottom: 1rem;
+}
+
+.person-selector select {
+    height: var(--input-height);
 } 

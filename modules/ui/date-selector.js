@@ -1,216 +1,85 @@
 /**
- * Module de sélecteur de date dynamique
- * 
- * Fournit un composant de sélection de date avec :
- * - Navigation par année (précédente/suivante)
- * - Affichage de la date actuelle
- * - Ouverture d'un calendrier pour sélection précise
+ * Module UI pour la sélection de date
+ * Affiche trois boutons alignés horizontalement : précédent, date actuelle, suivant
  */
-
-// État global du sélecteur de date
-let currentSelectedDate = new Date();
-let dateChangeCallbacks = [];
-
-/**
- * Initialise le sélecteur de date avec une date par défaut
- * @param {Date|string} defaultDate - Date par défaut (aujourd'hui si non spécifiée)
- */
-export function initDateSelector(defaultDate = null) {
-    if (defaultDate) {
-        currentSelectedDate = new Date(defaultDate);
-    } else {
-        currentSelectedDate = new Date();
-    }
-    
-    // Mettre à jour la date globale de l'application
-    window.currentDate = formatDateForAPI(currentSelectedDate);
-}
-
-/**
- * Formate une date pour l'API (YYYY-MM-DD)
- * @param {Date} date - Date à formater
- * @returns {string} Date formatée
- */
-export function formatDateForAPI(date) {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-}
-
-/**
- * Formate une date pour l'affichage (DD/MM/YYYY)
- * @param {Date} date - Date à formater
- * @returns {string} Date formatée
- */
-export function formatDateForDisplay(date) {
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = date.getFullYear();
+function formatDateFr(date) {
+    // Format JJ/MM/AA
+    const d = new Date(date);
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = String(d.getFullYear()).slice(-2);
     return `${day}/${month}/${year}`;
 }
 
 /**
- * Crée le HTML du sélecteur de date
- * @returns {string} HTML du sélecteur
+ * Formate une date pour l'API (YYYY-MM-DD)
  */
-export function createDateSelectorHTML() {
-    const currentDate = formatDateForDisplay(currentSelectedDate);
-    
-    return `
-        <div class="date-selector">
-            <button class="btn date-nav-btn" id="prevYearBtn" title="Année précédente">
-                <span class="date-nav-arrow">←</span>
-            </button>
-            <button class="btn date-display-btn" id="currentDateBtn" title="Cliquer pour ouvrir le calendrier">
-                <span class="date-display-text">${currentDate}</span>
-            </button>
-            <button class="btn date-nav-btn" id="nextYearBtn" title="Année suivante">
-                <span class="date-nav-arrow">→</span>
-            </button>
-        </div>
-    `;
+function formatDateForAPI(date) {
+    if (!date) return '';
+    if (typeof date === 'string' && date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        return date; // Déjà au bon format
+    }
+    const d = new Date(date);
+    return d.toISOString().slice(0, 10);
 }
 
-/**
- * Configure les événements du sélecteur de date
- * @param {string} containerSelector - Sélecteur du conteneur parent
- */
-export function setupDateSelectorEvents(containerSelector = 'body') {
-    const container = document.querySelector(containerSelector);
-    
-    // Navigation année précédente
-    const prevBtn = container.querySelector('#prevYearBtn');
-    if (prevBtn) {
-        prevBtn.addEventListener('click', () => {
-            navigateToPreviousYear();
-        });
+export class DateSelector {
+    constructor(container, options = {}) {
+        this.container = container;
+        this.initialDate = options.initialDate ? new Date(options.initialDate) : new Date();
+        this.currentDate = new Date(this.initialDate);
+        this.onDateChange = options.onDateChange || (() => {});
+        this.init();
     }
     
-    // Navigation année suivante
-    const nextBtn = container.querySelector('#nextYearBtn');
-    if (nextBtn) {
-        nextBtn.addEventListener('click', () => {
-            navigateToNextYear();
-        });
+    init() {
+        // S'assurer que currentDate est correctement initialisé
+        this.currentDate = new Date(this.initialDate);
+        console.log('DateSelector initialisé avec la date:', formatDateForAPI(this.currentDate));
+        this.render();
     }
     
-    // Ouverture du calendrier
-    const dateBtn = container.querySelector('#currentDateBtn');
-    if (dateBtn) {
-        dateBtn.addEventListener('click', () => {
-            openDatePicker();
-        });
+    render() {
+        const dateStr = formatDateFr(this.currentDate);
+        this.container.innerHTML = `
+            <div class="date-selector">
+                <button class="btn btn-outline date-nav-btn" onclick="this.parentElement.parentElement.dateSelector.navigateYear(-1)" title="Année précédente">
+                    <span>‹</span>
+                </button>
+                <button class="btn date-display-btn" disabled>
+                    <span>${dateStr}</span>
+                </button>
+                <button class="btn btn-outline date-nav-btn" onclick="this.parentElement.parentElement.dateSelector.navigateYear(1)" title="Année suivante">
+                    <span>›</span>
+                </button>
+            </div>
+        `;
+        this.container.dateSelector = this;
     }
-}
-
-/**
- * Navigue vers l'année précédente
- */
-function navigateToPreviousYear() {
-    const newDate = new Date(currentSelectedDate);
-    newDate.setFullYear(newDate.getFullYear() - 1);
-    updateSelectedDate(newDate);
-}
-
-/**
- * Navigue vers l'année suivante
- */
-function navigateToNextYear() {
-    const newDate = new Date(currentSelectedDate);
-    newDate.setFullYear(newDate.getFullYear() + 1);
-    updateSelectedDate(newDate);
-}
-
-/**
- * Met à jour la date sélectionnée
- * @param {Date} newDate - Nouvelle date
- */
-function updateSelectedDate(newDate) {
-    currentSelectedDate = newDate;
-    window.currentDate = formatDateForAPI(newDate);
     
-    // Mettre à jour l'affichage
-    updateDateDisplay();
-    
-    // Notifier les callbacks
-    notifyDateChange();
-}
-
-/**
- * Met à jour l'affichage de la date
- */
-function updateDateDisplay() {
-    const dateBtn = document.querySelector('#currentDateBtn');
-    if (dateBtn) {
-        const dateText = dateBtn.querySelector('.date-display-text');
-        if (dateText) {
-            dateText.textContent = formatDateForDisplay(currentSelectedDate);
-        }
+    navigateYear(direction) {
+        // Créer une nouvelle date et modifier l'année
+        const newDate = new Date(this.currentDate);
+        newDate.setFullYear(this.currentDate.getFullYear() + direction);
+        this.currentDate = newDate;
+        
+        // Mettre à jour l'affichage
+        this.render();
+        
+        // Formater la date pour l'API (YYYY-MM-DD) avant de la passer au callback
+        const formattedDate = formatDateForAPI(this.currentDate);
+        console.log('DateSelector: nouvelle date sélectionnée:', formattedDate);
+        
+        // Appeler le callback avec la date formatée
+        this.onDateChange(formattedDate);
     }
-}
-
-/**
- * Ouvre le sélecteur de date natif
- */
-function openDatePicker() {
-    const input = document.createElement('input');
-    input.type = 'date';
-    input.value = formatDateForAPI(currentSelectedDate);
-    input.style.position = 'absolute';
-    input.style.left = '-9999px';
-    input.style.opacity = '0';
     
-    input.addEventListener('change', (e) => {
-        if (e.target.value) {
-            const newDate = new Date(e.target.value);
-            updateSelectedDate(newDate);
-        }
-        document.body.removeChild(input);
-    });
+    getCurrentDate() {
+        return formatDateForAPI(this.currentDate);
+    }
     
-    input.addEventListener('blur', () => {
-        document.body.removeChild(input);
-    });
-    
-    document.body.appendChild(input);
-    input.focus();
-    input.click();
-}
-
-/**
- * S'abonne aux changements de date
- * @param {Function} callback - Fonction appelée quand la date change
- */
-export function onDateChange(callback) {
-    dateChangeCallbacks.push(callback);
-}
-
-/**
- * Notifie tous les callbacks de changement de date
- */
-function notifyDateChange() {
-    dateChangeCallbacks.forEach(callback => {
-        try {
-            callback(currentSelectedDate, formatDateForAPI(currentSelectedDate));
-        } catch (error) {
-            console.error('Erreur dans le callback de changement de date:', error);
-        }
-    });
-}
-
-/**
- * Récupère la date actuellement sélectionnée
- * @returns {Date} Date sélectionnée
- */
-export function getCurrentDate() {
-    return new Date(currentSelectedDate);
-}
-
-/**
- * Récupère la date actuellement sélectionnée formatée pour l'API
- * @returns {string} Date formatée YYYY-MM-DD
- */
-export function getCurrentDateFormatted() {
-    return formatDateForAPI(currentSelectedDate);
+    setDate(date) {
+        this.currentDate = new Date(date);
+        this.render();
+    }
 } 

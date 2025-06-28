@@ -70,6 +70,7 @@ class SynthesisAPI extends BaseAPI {
     private function getResponsibilities() {
         $period = $_GET['period'] ?? '2024-06';
         $specificDate = $_GET['date'] ?? null;
+        $typeFilter = $_GET['type'] ?? null;
         
         // Valider le format de période (YYYY-MM)
         if (!preg_match('/^\d{4}-\d{2}$/', $period)) {
@@ -122,14 +123,23 @@ class SynthesisAPI extends BaseAPI {
                 AND (ast.end_date IS NULL OR ast.end_date >= :target_date2)
             LEFT JOIN users u_assigned ON ast.user = u_assigned.id AND u_assigned.status = 'active'
             WHERE a.status = 'current'
-            ORDER BY at.name, a.name, task.entry, u_assigned.display_name
         ";
         
-        $stmt = $this->pdo->prepare($query);
-        $stmt->execute([
+        // Ajouter le filtre par type si spécifié
+        $params = [
             'target_date' => $targetDate,
             'target_date2' => $targetDate
-        ]);
+        ];
+        
+        if ($typeFilter) {
+            $query .= " AND at.name = :type_filter";
+            $params['type_filter'] = $typeFilter;
+        }
+        
+        $query .= " ORDER BY at.name, a.name, task.entry, u_assigned.display_name";
+        
+        $stmt = $this->pdo->prepare($query);
+        $stmt->execute($params);
         
         $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
@@ -159,10 +169,12 @@ class SynthesisAPI extends BaseAPI {
             'activities' => $activities,
             'period' => $period,
             'target_date' => $targetDate,
+            'type_filter' => $typeFilter,
             'total_activities' => count($activities),
             'query_info' => [
                 'searched_date' => $targetDate,
-                'period_format' => $period
+                'period_format' => $period,
+                'type_filter_applied' => $typeFilter ? true : false
             ]
         ]);
     }
@@ -250,6 +262,7 @@ class SynthesisAPI extends BaseAPI {
     private function exportCSV() {
         $period = $_GET['period'] ?? '2024-06';
         $specificDate = $_GET['date'] ?? null;
+        $typeFilter = $_GET['type'] ?? null;
         
         if (!preg_match('/^\d{4}-\d{2}$/', $period)) {
             $this->sendError('Format de période invalide');
@@ -290,21 +303,35 @@ class SynthesisAPI extends BaseAPI {
                 AND (ast.end_date IS NULL OR ast.end_date >= :target_date2)
             LEFT JOIN users u_assigned ON ast.user = u_assigned.id AND u_assigned.status = 'active'
             WHERE a.status = 'current'
-            ORDER BY at.name, a.name, task.entry, u_assigned.display_name
         ";
         
-        $stmt = $this->pdo->prepare($query);
-        $stmt->execute([
+        // Ajouter le filtre par type si spécifié
+        $params = [
             'target_date' => $targetDate,
             'target_date2' => $targetDate
-        ]);
+        ];
+        
+        if ($typeFilter) {
+            $query .= " AND at.name = :type_filter";
+            $params['type_filter'] = $typeFilter;
+        }
+        
+        $query .= " ORDER BY at.name, a.name, task.entry, u_assigned.display_name";
+        
+        $stmt = $this->pdo->prepare($query);
+        $stmt->execute($params);
         
         $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
         $activities = $this->organizeData($results);
         
         // Générer CSV
         header('Content-Type: text/csv; charset=utf-8');
-        header('Content-Disposition: attachment; filename="responsabilites_' . $targetDate . '.csv"');
+        $filename = "responsabilites_" . $targetDate;
+        if ($typeFilter) {
+            $filename .= "_" . str_replace(' ', '_', $typeFilter);
+        }
+        $filename .= ".csv";
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
         header('Cache-Control: no-cache, must-revalidate');
         
         $output = fopen('php://output', 'w');
