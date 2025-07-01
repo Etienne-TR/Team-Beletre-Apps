@@ -1,0 +1,4 @@
+/* Couleur d'accentuation de l'application */
+:root {
+    --app-accent-color: #1976d2;
+}

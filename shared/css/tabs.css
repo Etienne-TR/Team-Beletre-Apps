@@ -1,0 +1,142 @@
+/* ========================================
+   SYSTÈME D'ONGLETS HORIZONTAUX
+   ========================================
+   
+   Composant d'onglets horizontaux avec design sobre
+   utilisant uniquement les variables du système de design
+   ======================================== */
+
+/* Conteneur principal des onglets */
+.tabs-container {
+    width: 100%;
+    border-bottom: var(--border-width-fine) solid var(--border-color);
+    background-color: var(--background-lightest);
+}
+
+/* Navigation des onglets */
+.tabs-nav {
+    display: flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    gap: 0;
+}
+
+/* Onglet individuel */
+.tabs-nav-item {
+    flex: 1;
+    position: relative;
+}
+
+/* Lien de l'onglet */
+.tabs-nav-link {
+    display: block;
+    width: 100%;
+    padding: var(--gap-medium) var(--gap-large);
+    text-decoration: none;
+    color: var(--text-muted);
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    font-family: var(--font-family);
+    font-size: var(--font-size-normal);
+    font-weight: var(--font-weight-medium);
+    text-align: center;
+    transition: var(--transition-normal);
+    position: relative;
+    outline: var(--focus-outline);
+}
+
+/* État de survol */
+.tabs-nav-link:hover {
+    color: var(--text-color);
+    background-color: var(--hover-background);
+}
+
+/* État actif */
+.tabs-nav-link.active {
+    color: var(--primary-color);
+    font-weight: var(--font-weight-semibold);
+}
+
+/* Trait de soulignement pour l'onglet actif */
+.tabs-nav-link.active::after {
+    content: '';
+    position: absolute;
+    bottom: calc(-1 * var(--border-width-fine));
+    left: 0;
+    width: 100%;
+    height: var(--border-width-normal);
+    background-color: var(--primary-color);
+    border-radius: var(--border-radius-small) var(--border-radius-small) 0 0;
+}
+
+/* État de focus */
+.tabs-nav-link:focus {
+    box-shadow: var(--shadow-focus);
+    border-radius: var(--border-radius-small);
+}
+
+/* État désactivé */
+.tabs-nav-link:disabled {
+    color: var(--disabled-color);
+    background-color: var(--disabled-background);
+    cursor: var(--disabled-cursor);
+    opacity: var(--opacity-disabled);
+}
+
+/* Contenu des onglets */
+.tabs-content {
+    padding: var(--gap-large);
+    background-color: var(--background-lightest);
+}
+
+/* Panneau de contenu individuel */
+.tabs-panel {
+    display: none;
+}
+
+/* Panneau actif */
+.tabs-panel.active {
+    display: block;
+}
+
+/* Animation de transition pour le contenu */
+.tabs-panel {
+    animation: fadeIn var(--transition-normal);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .tabs-nav-link {
+        padding: var(--gap-tight) var(--gap-medium);
+        font-size: var(--font-size-small);
+    }
+    
+    .tabs-content {
+        padding: var(--gap-medium);
+    }
+}
+
+/* Variante avec onglets plus compacts */
+.tabs-container.compact .tabs-nav-link {
+    padding: var(--gap-tight) var(--gap-medium);
+    font-size: var(--font-size-small);
+}
+
+/* Variante avec onglets plus espacés */
+.tabs-container.spacious .tabs-nav-link {
+    padding: var(--gap-large) calc(var(--gap-large) * 2);
+    font-size: var(--font-size-medium);
+} 

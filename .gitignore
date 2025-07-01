@@ -1,6 +1,5 @@
 sftp.json
-api/config.php
-api/config.php.ouvaton
+api/common/config.php
 docs/private/
 data/
 sql/

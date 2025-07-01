@@ -5,7 +5,7 @@
  */
 
 // Inclusion de la configuration existante
-require_once '../../../../api/config.php';
+require_once '../../../../api/common/config.php';
 
 class TriggerGenerator {
     private $pdo;

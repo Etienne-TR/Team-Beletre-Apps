@@ -18,6 +18,68 @@ import {
     getGlobalState
 } from './responsibilities.js';
 
+// ===== EXEMPLE D'UTILISATION DE L'ÉTAT GLOBAL (USER) =====
+
+// 1. Récupérer l'utilisateur actuel
+const currentUser = appStore.getCurrentUser();
+console.log('Utilisateur actuel:', currentUser);
+
+// 2. Définir l'utilisateur actuel (après authentification)
+function handleUserLogin(userData) {
+    appStore.setCurrentUser(userData);
+    console.log('Utilisateur connecté:', userData);
+}
+
+// 3. S'abonner aux changements de l'utilisateur
+appStore.subscribeToUser((user) => {
+    console.log('Utilisateur changé:', user);
+    if (user) {
+        // Mettre à jour l'interface utilisateur
+        updateUserInterface(user);
+    } else {
+        // Rediriger vers la page de connexion
+        redirectToLogin();
+    }
+});
+
+// 4. Récupérer l'application actuelle
+const currentApp = appStore.getCurrentApp();
+console.log('Application actuelle:', currentApp);
+
+// 5. Changer d'application
+function switchToApp(appName) {
+    appStore.setCurrentApp(appName);
+    console.log('Changement vers l\'application:', appName);
+}
+
+// 6. S'abonner aux changements d'application
+appStore.subscribeToApp((app) => {
+    console.log('Application changée:', app);
+    // Mettre à jour la navigation ou l'interface
+    updateAppNavigation(app);
+});
+
+// ===== FONCTIONS UTILITAIRES POUR L'ÉTAT GLOBAL =====
+
+function updateUserInterface(user) {
+    // Mettre à jour l'affichage des informations utilisateur
+    console.log('Mise à jour UI utilisateur:', {
+        name: user.name,
+        role: user.role,
+        avatar: user.avatar
+    });
+}
+
+function redirectToLogin() {
+    console.log('Redirection vers la page de connexion');
+    // window.location.href = '/login';
+}
+
+function updateAppNavigation(app) {
+    // Mettre à jour la navigation selon l'application
+    console.log('Mise à jour navigation pour:', app);
+}
+
 // ===== EXEMPLE D'UTILISATION DANS INDIVIDUAL VIEW =====
 
 // 1. S'abonner aux changements de l'année (partagée)
@@ -117,7 +179,7 @@ setDate('2024-06-15');
 // ===== NOUVEAU SÉLECTEUR DE DATE =====
 
 // Initialisation du sélecteur de date
-import { initDateSelector, onDateChange } from '../ui/date-selector.js';
+import { initDateSelector, onDateChange } from '../components/date-selector.js';
 
 // Initialiser avec aujourd'hui par défaut
 initDateSelector();

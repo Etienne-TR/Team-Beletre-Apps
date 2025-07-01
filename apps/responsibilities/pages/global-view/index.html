@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vue globale - Responsabilités - Team Apps</title>
+    <link rel="stylesheet" href="/shared/css/shared.css">
+</head>
+<body>
+    <div id="loadingSection">
+        <div class="loading">Chargement de la vue globale...</div>
+    </div>
+    
+    <div id="authError" style="display: none;">
+        <div class="error-message">
+            <h2>Accès non autorisé</h2>
+            <p>Vous devez être connecté pour accéder à cette page.</p>
+            <a href="../../">Retour</a>
+        </div>
+    </div>
+    
+    <!-- Vue globale des responsabilités -->
+    <div id="globalViewPage" style="display: none;">
+        <div id="appHeader">
+            <!-- Les filtres seront déplacés ici par JavaScript -->
+        </div>
+
+        <main class="main-content">
+            <!-- Contenu principal -->
+            <section class="activities-container cards-container" id="activitiesContainer">
+                <!-- Le contenu sera généré dynamiquement -->
+            </section>
+
+            <!-- Message vide -->
+            <section class="empty-state" id="emptyState" style="display: none;">
+                <div class="empty-content">
+                    <span class="empty-icon">📭</span>
+                    <h3>Pas d'activité de ce type à cette période.</h3>
+                </div>
+            </section>
+        </main>
+    </div>
+    <script type="module" src="global-view.js"></script>
+</body>
+</html> 

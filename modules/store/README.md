@@ -131,6 +131,36 @@ setYear('2024');
 - `getGlobalState()`: État complet de la vue globale
 - `getResponsibilitiesState()`: État complet des responsibilities
 
+## 🌐 Actions globales (toutes applications)
+
+### **Gestion de l'utilisateur**
+- `appStore.getCurrentUser()`: Récupère l'utilisateur actuel
+- `appStore.setCurrentUser(user)`: Définit l'utilisateur actuel
+- `appStore.subscribeToUser(callback)`: S'abonne aux changements de l'utilisateur
+
+### **Gestion de l'application**
+- `appStore.getCurrentApp()`: Récupère l'application actuelle
+- `appStore.setCurrentApp(app)`: Définit l'application actuelle
+- `appStore.subscribeToApp(callback)`: S'abonne aux changements d'application
+
+### **Exemple d'utilisation**
+```javascript
+// Récupérer l'utilisateur
+const user = appStore.getCurrentUser();
+
+// Définir l'utilisateur après authentification
+appStore.setCurrentUser(userData);
+
+// S'abonner aux changements
+appStore.subscribeToUser((user) => {
+    if (user) {
+        updateUserInterface(user);
+    } else {
+        redirectToLogin();
+    }
+});
+```
+
 ## 🎯 Avantages
 
 ### **1. Simplicité**

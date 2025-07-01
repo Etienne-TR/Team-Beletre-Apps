@@ -6,11 +6,11 @@ Le dossier `utils/` contient des **fonctions utilitaires réutilisables** qui fo
 
 ## 📋 Modules disponibles
 
-### `message.js`
+### `message.js` *(déplacé vers `modules/components/`)*
 **Affichage de messages d'information et d'erreur**
 
 ```javascript
-import { showMessage } from '../../../modules/utils/message.js';
+import { showMessage } from '../../../modules/components/message.js';
 
 // Afficher un message d'information
 showMessage('Opération réussie !', 'info');
@@ -115,7 +115,7 @@ const cardDesc = formatDescriptionForCard('Description', false);
 
 ### Import simple
 ```javascript
-import { showMessage } from '../../../modules/utils/message.js';
+import { showMessage } from '../../../modules/components/message.js';
 ```
 
 ### Import multiple
@@ -128,7 +128,7 @@ import {
 
 ### Import avec alias
 ```javascript
-import { showMessage as displayMessage } from '../../../modules/utils/message.js';
+import { showMessage as displayMessage } from '../../../modules/components/message.js';
 ```
 
 ## 📝 Conventions

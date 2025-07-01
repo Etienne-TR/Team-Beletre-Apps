@@ -45,12 +45,12 @@ Composants JavaScript réutilisables pour l'interface :
 ### Import d'un module
 ```javascript
 // Import d'un utilitaire
-import { showMessage } from '../../../modules/utils/message.js';
+import { showMessage } from '../../../modules/components/message.js';
 import { formatDate } from '../../../modules/utils/date.js';
 
 // Import d'un composant UI
-import { initializeBackButtons } from '../../../modules/ui/app-header.js';
-import { createResponsibleBadge } from '../../../modules/ui/badges.js';
+import { initializeBackButtons } from '../../../modules/components/app-header.js';
+import { createResponsibleBadge } from '../../../modules/components/badges.js';
 ```
 
 ### Import multiple

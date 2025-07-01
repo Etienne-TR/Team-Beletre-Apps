@@ -1,4 +1,5 @@
 import { appStore } from './store.js';
+import { formatDateForAPI } from '../utils/date-utils.js';
 
 // ===== ACTIONS POUR L'ÉTAT PARTAGÉ =====
 
@@ -24,7 +25,7 @@ export function getDate() {
  */
 export function setYear(year) {
     console.warn('setYear() est déprécié, utilisez setDate() à la place');
-    const currentDate = getDate() || new Date().toISOString().split('T')[0];
+    const currentDate = getDate() || formatDateForAPI(new Date());
     const [_, month, day] = currentDate.split('-');
     const newDate = `${year}-${month}-${day}`;
     setDate(newDate);
@@ -59,13 +60,29 @@ export function setResponsibilityFilter(filter) {
 /**
  * Ajoute une carte à la liste des cartes dépliées
  */
-export function expandCard(cardId) {
+export function expandCard(cardId, workerId = null) {
     const state = appStore.getState('responsibilities.individual');
-    const { expandedCards } = state;
+    const { expandedCardsByWorker } = state;
     
-    if (!expandedCards.includes(cardId)) {
+    // Utiliser le worker sélectionné si aucun worker n'est fourni
+    const targetWorker = workerId || state.selectedWorker;
+    
+    if (!targetWorker) {
+        console.warn('Aucun worker sélectionné pour expandCard');
+        return;
+    }
+    
+    // Initialiser le tableau pour ce worker si nécessaire
+    if (!expandedCardsByWorker[targetWorker]) {
+        expandedCardsByWorker[targetWorker] = [];
+    }
+    
+    if (!expandedCardsByWorker[targetWorker].includes(cardId)) {
         appStore.setState('responsibilities.individual', {
-            expandedCards: [...expandedCards, cardId]
+            expandedCardsByWorker: {
+                ...expandedCardsByWorker,
+                [targetWorker]: [...expandedCardsByWorker[targetWorker], cardId]
+            }
         });
     }
 }
@@ -73,21 +90,43 @@ export function expandCard(cardId) {
 /**
  * Retire une carte de la liste des cartes dépliées
  */
-export function collapseCard(cardId) {
+export function collapseCard(cardId, workerId = null) {
     const state = appStore.getState('responsibilities.individual');
-    const { expandedCards } = state;
+    const { expandedCardsByWorker } = state;
     
-    appStore.setState('responsibilities.individual', {
-        expandedCards: expandedCards.filter(id => id !== cardId)
-    });
+    // Utiliser le worker sélectionné si aucun worker n'est fourni
+    const targetWorker = workerId || state.selectedWorker;
+    
+    if (!targetWorker) {
+        console.warn('Aucun worker sélectionné pour collapseCard');
+        return;
+    }
+    
+    if (expandedCardsByWorker[targetWorker]) {
+        appStore.setState('responsibilities.individual', {
+            expandedCardsByWorker: {
+                ...expandedCardsByWorker,
+                [targetWorker]: expandedCardsByWorker[targetWorker].filter(id => id !== cardId)
+            }
+        });
+    }
 }
 
 /**
  * Vérifie si une carte est dépliée
  */
-export function isCardExpanded(cardId) {
+export function isCardExpanded(cardId, workerId = null) {
     const state = appStore.getState('responsibilities.individual');
-    return state.expandedCards.includes(cardId);
+    const { expandedCardsByWorker } = state;
+    
+    // Utiliser le worker sélectionné si aucun worker n'est fourni
+    const targetWorker = workerId || state.selectedWorker;
+    
+    if (!targetWorker) {
+        return false;
+    }
+    
+    return expandedCardsByWorker[targetWorker] ? expandedCardsByWorker[targetWorker].includes(cardId) : false;
 }
 
 // ===== ACTIONS POUR GLOBAL VIEW =====

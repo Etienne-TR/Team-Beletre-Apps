@@ -24,13 +24,13 @@ Le dossier `shared/` contient les **ressources communes** utilisées par toutes 
   - Animations et transitions
 - **Utilisation** : Importé dans toutes les pages avec en-tête
 
-### `common.js`
-- **Rôle** : Fonctions JavaScript d'infrastructure communes
+### `api-client.js`
+- **Rôle** : Client API et fonctions d'authentification communes
 - **Fonctions principales** :
   - `apiCall()` : Appels API génériques
-  - `apiRequest()` : Appels API avec gestion d'erreur
-  - `checkAuth()` : Vérification d'authentification
-- **Utilisation** : Fonctions utilitaires pour toutes les pages
+  - `apiRequest()` : Appels API avec gestion d'erreur robuste
+  - `checkAuth()` : Vérification d'authentification centralisée
+- **Utilisation** : Client API pour toutes les applications
 
 ## 🔗 Comment utiliser
 
@@ -43,7 +43,7 @@ Le dossier `shared/` contient les **ressources communes** utilisées par toutes 
 ### Import JavaScript
 ```javascript
 // Dans les modules ES6
-import { apiRequest, checkAuth } from '../../../shared/common.js';
+import { apiRequest, checkAuth } from '../../../shared/api-client.js';
 ```
 
 ## 🎨 Conventions
@@ -64,4 +64,4 @@ Les styles sont conçus pour être responsive :
 
 - **Ajout de styles** : Préférer `style.css` pour les styles globaux
 - **Composants spécifiques** : Créer des fichiers séparés si nécessaire
-- **JavaScript** : Garder `common.js` pour l'infrastructure, pas la logique métier 
+- **JavaScript** : Garder `api-client.js` pour l'infrastructure API, pas la logique métier 

@@ -1,0 +1,411 @@
+/* Styles dédiés aux cartes et conteneurs de cartes */
+
+/* Import des variables de design */
+@import url('./variables.css');
+
+/* ========================================
+   CONTAINER DE CARTES
+   ======================================== */
+
+.content-cards-container {
+    /* Layout */
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--gap-medium);
+    width: 100%;
+    max-width: var(--max-content-width);
+    margin: 0 auto;
+    padding: var(--gap-large);
+    
+    /* Box model */
+    box-sizing: border-box;
+    
+    /* Fond */
+    background-color: var(--background-lightest);
+    
+    /* Pas de bordure */
+}
+
+/* ========================================
+   CARTES DE CONTENU
+   ======================================== */
+
+.content-card {
+    /* Layout */
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    
+    /* Fond et bordure */
+    background-color: white;
+    border: var(--border-width-fine) solid var(--border-color);
+    border-radius: var(--border-radius);
+    
+    /* Ombre */
+    box-shadow: var(--shadow-light);
+    
+    /* Transition */
+    transition: var(--transition-normal);
+    
+    /* Curseur */
+    cursor: pointer;
+}
+
+/* État de survol de la carte */
+.content-card:hover {
+    /* Transformation */
+    transform: var(--transform-hover);
+    
+    /* Ombre plus prononcée */
+    box-shadow: var(--shadow-medium);
+    
+    /* Bordure au survol */
+    border-color: var(--hover-border-color);
+}
+
+/* État actif de la carte */
+.content-card:active {
+    /* Transformation */
+    transform: var(--transform-active);
+    
+    /* Ombre réduite */
+    box-shadow: var(--shadow-light);
+}
+
+/* ========================================
+   EN-TÊTE DE CARTE
+   ======================================== */
+
+.content-card-header {
+    /* Layout */
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--gap-medium);
+    padding: var(--gap-medium);
+    
+    /* Bordure basse : aucune */
+    /* border-bottom: var(--border-width-fine) solid var(--border-color); */
+    
+    /* Fond */
+    background-color: var(--background-lightest);
+    border-radius: var(--border-radius) var(--border-radius) 0 0;
+    
+    /* Transition pour les coins arrondis */
+    transition: border-radius var(--transition-normal);
+}
+
+/* Quand la carte est collapsed (non étendue), l'en-tête a des coins arrondis en bas */
+.content-card:not(.expanded) .content-card-header {
+    border-radius: var(--border-radius);
+    border-bottom: none;
+}
+
+/* Quand la carte est expanded, l'en-tête garde ses coins arrondis en haut seulement */
+.content-card.expanded .content-card-header {
+    border-radius: var(--border-radius) var(--border-radius) 0 0;
+    
+    /* Bordure basse : aucune */
+    /* border-bottom: var(--border-width-fine) solid var(--border-color); */
+}
+
+.content-card-title {
+    /* Layout */
+    flex: 1;
+    
+    /* Typographie */
+    font-family: var(--font-family-title);
+    font-size: var(--font-size-medium);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-color);
+    
+    /* Espacement */
+    margin: 0;
+    line-height: var(--line-height-tight);
+}
+
+.content-card-title-meta {
+    /* Layout */
+    flex-shrink: 0;
+    
+    /* Typographie */
+    font-family: var(--font-family-content);
+    font-size: var(--font-size-small);
+    font-weight: var(--font-weight-normal);
+    color: var(--text-muted);
+    
+    /* Espacement */
+    line-height: var(--line-height-tight);
+}
+
+.content-card-subtitle {
+    /* Typographie */
+    font-family: var(--font-family-content);
+    font-size: var(--font-size-small);
+    font-weight: var(--font-weight-normal);
+    color: var(--text-muted);
+    
+    /* Espacement */
+    margin: var(--gap-tight) 0 0 0;
+    line-height: var(--line-height-normal);
+}
+
+/* ========================================
+   CORPS DE CARTE
+   ======================================== */
+
+.content-card-body {
+    /* Layout */
+    flex: 1;
+    padding: var(--gap-large);
+    padding-top: 0;
+    
+    /* Typographie */
+    font-family: var(--font-family-content);
+    font-size: var(--font-size-normal);
+    font-weight: var(--font-weight-normal);
+    color: var(--text-color);
+    line-height: var(--line-height-relaxed);
+}
+
+/* ========================================
+   PIED DE CARTE
+   ======================================== */
+
+.content-card-footer {
+    /* Layout */
+    padding: var(--gap-large);
+    padding-top: var(--gap-medium);
+    
+    /* Bordure */
+    border-top: var(--border-width-fine) solid var(--border-color);
+    
+    /* Fond */
+    background-color: var(--background-lighter);
+    border-radius: 0 0 var(--border-radius) var(--border-radius);
+}
+
+/* ========================================
+   VARIANTES DE CARTES
+   ======================================== */
+
+/* Carte avec accent */
+.content-card--accent {
+    border-color: var(--accent-color);
+    border-width: var(--border-width-normal);
+}
+
+.content-card--accent:hover {
+    border-color: var(--primary-color);
+}
+
+/* Carte avec succès */
+.content-card--success {
+    border-color: var(--success-color);
+    background-color: var(--background-success-light);
+}
+
+.content-card--success:hover {
+    border-color: var(--success-color);
+    background-color: var(--background-success);
+}
+
+/* Carte avec erreur */
+.content-card--error {
+    border-color: var(--error-color);
+    background-color: #fef2f2;
+}
+
+.content-card--error:hover {
+    border-color: var(--error-color);
+    background-color: #fee2e2;
+}
+
+/* Carte avec avertissement */
+.content-card--warning {
+    border-color: var(--warning-color);
+    background-color: #fffbeb;
+}
+
+.content-card--warning:hover {
+    border-color: var(--warning-color);
+    background-color: #fef3c7;
+}
+
+/* Carte pour créer un nouvel élément */
+.content-card--create-new {
+    border-style: dashed;
+    border-width: calc(var(--border-width-normal) + 0.03em);
+    border-color: var(--border-color);
+    background-color: transparent;
+    color: var(--text-muted);
+    margin: 0.03em;
+    box-sizing: border-box;
+}
+
+.content-card--create-new:hover {
+    border-color: var(--accent-color);
+    background-color: var(--background-light);
+    color: var(--text-color);
+}
+
+/* Header transparent pour les cartes de création */
+.content-card--create-new .content-card-header {
+    background-color: transparent;
+}
+
+/* ========================================
+   CARTE DÉSACTIVÉE
+   ======================================== */
+
+.content-card--disabled {
+    /* Apparence */
+    opacity: var(--opacity-disabled);
+    background-color: var(--disabled-background);
+    
+    /* Curseur */
+    cursor: var(--disabled-cursor);
+    
+    /* Désactivation des interactions */
+    pointer-events: none;
+}
+
+.content-card--disabled:hover {
+    /* Suppression des effets de survol */
+    transform: var(--transform-none);
+    box-shadow: var(--shadow-light);
+    border-color: var(--border-color);
+}
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+
+/* Tablettes */
+@media (max-width: 768px) {
+    .content-cards-container {
+        grid-template-columns: 1fr;
+        gap: var(--gap-medium);
+        padding: var(--gap-medium);
+    }
+    
+    .content-card-header,
+    .content-card-body,
+    .content-card-footer {
+        padding: var(--gap-medium);
+    }
+}
+
+/* Mobiles */
+@media (max-width: 480px) {
+    .content-cards-container {
+        grid-template-columns: 1fr;
+        gap: var(--gap-medium);
+        padding: var(--gap-tight);
+    }
+    
+    .content-card {
+        min-height: 150px;
+    }
+    
+    .content-card-title {
+        font-size: var(--font-size-normal);
+    }
+    
+    .content-card-body {
+        font-size: var(--font-size-small);
+    }
+}
+
+/* Styles spécifiques pour les cartes d'activité */
+.activity-card .compact-header {
+    /* Layout */
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--gap-medium);
+    padding: var(--gap-medium);
+    
+    /* Bordure */
+    border-bottom: var(--border-width-fine) solid var(--border-color);
+    
+    /* Fond */
+    background-color: var(--background-lightest);
+    border-radius: var(--border-radius) var(--border-radius) 0 0;
+    
+    /* Transition pour les coins arrondis */
+    transition: border-radius var(--transition-normal);
+}
+
+/* Quand la carte d'activité est collapsed, l'en-tête a des coins arrondis en bas */
+.activity-card:not(.expanded) .compact-header {
+    border-radius: var(--border-radius);
+    border-bottom: none;
+}
+
+/* Quand la carte d'activité est expanded, l'en-tête garde ses coins arrondis en haut seulement */
+.activity-card.expanded .compact-header {
+    border-radius: var(--border-radius) var(--border-radius) 0 0;
+    border-bottom: var(--border-width-fine) solid var(--border-color);
+}
+
+
+/* ========================================
+   CARTES IMBRIQUÉES
+
+   A utiliser un conteneur sur deux dans le
+   cas de conteneurs de cartes imbriqués.
+   Pour l'instant, l'inversion des couleur
+   de fond a été retirée.
+   ======================================== */
+
+/* Container de cartes imbriquées avec fond inversé et espacement réduit */
+.content-cards-container--nested {
+    background-color: var(--background-lightest);
+    gap: var(--gap-tight); /* Gap plus petit que var(--gap-medium) */
+    padding: 0; /* Padding plus petit que var(--gap-large) */
+}
+
+/* Carte avec fond inversé par rapport au container parent */
+.content-card--nested {
+    /* Fond de la carte normal comme son parent finalement */
+    /*background-color: var(--background-lighter);*/
+    background-color: var(--background-lightest);
+}
+
+/* Carte de sous-groupe avec styles compacts */
+.content-card--subgroup {
+    /* Bordure et espacement réduits */
+    border-width: calc(var(--border-width-fine) * 0.75);
+    border-radius: calc(var(--border-radius) * 0.75);
+    
+    /* Ombre plus subtile */
+    box-shadow: var(--shadow-light);
+}
+
+.content-card--subgroup:hover {
+    box-shadow: var(--shadow-light);
+}
+
+/* Titre de taille normale pour les sous-groupes */
+.content-card--subgroup .content-card-title {
+    font-size: var(--font-size-normal);
+    font-weight: var(--font-weight-medium);
+}
+
+/* En-tête compact pour les sous-groupes */
+.content-card--subgroup .content-card-header {
+    padding: calc(var(--gap-medium) * 0.75);
+    gap: calc(var(--gap-medium) * 0.75);
+}
+
+/* Corps compact pour les sous-groupes */
+.content-card--subgroup .content-card-body {
+    padding: calc(var(--gap-large) * 0.75);
+}
+
+/* Pied compact pour les sous-groupes */
+.content-card--subgroup .content-card-footer {
+    padding: calc(var(--gap-large) * 0.75);
+    padding-top: calc(var(--gap-medium) * 0.75);
+}

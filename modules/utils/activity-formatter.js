@@ -37,17 +37,19 @@ export function formatActivityNameOnly(rawName) {
  * @param {string} activity.name - Le nom de l'activité
  * @param {string} activity.type - Le type de l'activité (tel qu'il est dans la base de données)
  * @param {string} activity.icon - L'icône de l'activité
- * @returns {string} Le nom formaté avec icône "icon + type + " " + name"
+ * @param {Object} [options] - Options d'affichage
+ * @param {boolean} [options.hideType] - Si true, n'affiche pas le type
+ * @returns {string} Le nom formaté
  */
-export function formatActivityName(activity) {
+export function formatActivityName(activity, options = {}) {
     const rawName = activity.name || '';
     const rawType = activity.type || 'Activité';
-    
-    // Formater le type et le nom
-    const type = formatTypeName(rawType);
-    const name = formatActivityNameOnly(rawName);
     const icon = activity.icon || '📋';
-    
+    const name = formatActivityNameOnly(rawName);
+    if (options.hideType) {
+        return `${icon} ${name}`;
+    }
+    const type = formatTypeName(rawType);
     return `${icon} ${type} ${name}`;
 }
 

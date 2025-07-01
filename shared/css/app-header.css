@@ -62,7 +62,7 @@
     color: white;
     
     /* Style de la bordure aligné sur .btn-outline */
-    border: 1px solid rgba(255, 255, 255, 0.5);
+    border: var(--border-width-normal) solid rgba(255, 255, 255, 0.5);
     transition: all 0.2s ease;
     box-sizing: border-box; /* S'assure que padding/border sont inclus dans la taille */
 }

@@ -263,7 +263,7 @@ Le nouveau sélecteur de date remplace l'ancien sélecteur d'année statique :
 
 ### **S'abonner aux changements de date**
 ```javascript
-import { onDateChange } from '../ui/date-selector.js';
+import { onDateChange } from '../components/date-selector.js';
 
 onDateChange((newDate, formattedDate) => {
     console.log('Date changée:', formattedDate);
@@ -274,7 +274,7 @@ onDateChange((newDate, formattedDate) => {
 
 ### **Initialisation**
 ```javascript
-import { initDateSelector } from '../ui/date-selector.js';
+import { initDateSelector } from '../components/date-selector.js';
 
 // Initialiser avec aujourd'hui par défaut
 initDateSelector();
