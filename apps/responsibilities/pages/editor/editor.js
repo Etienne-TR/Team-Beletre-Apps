@@ -10,8 +10,8 @@ import { createAppHeader } from '/modules/components/app-header.js';
 import { updateUserInfo } from '/modules/components/user-info.js';
 import { formatActivityName, formatTypeName, formatActivityNameEscaped } from '/modules/utils/activity-formatter.js';
 import { DateSelector } from '/modules/components/date-selector.js';
-import { appStore } from '/modules/store/store.js';
-import { getDate, setDate } from '/modules/store/responsibilities.js';
+import { globalStore } from '/modules/store/store.js';
+import { getSelectedDate, setSelectedDate, getExpandedActivityCard, getExpandedTaskCard, setExpandedActivityCard, clearExpandedActivityCard, setExpandedTaskCard, clearExpandedTaskCard } from '/modules/store/responsibilities.js';
 import { formatDateForAPI, formatPeriodLiterary } from '/modules/utils/date-utils.js';
 
 // Variables globales
@@ -32,11 +32,12 @@ console.log('=== INITIALISATION EDITOR ===');
  */
 async function initializeEditor() {
     console.log('=== DÉBUT INITIALISATION ÉDITEUR ===');
+    console.log('État global initial - expandedActivityCard:', getExpandedActivityCard());
     
     // Initialiser la date dans le store si pas encore définie
-    const currentDateFromStore = getDate();
+    const currentDateFromStore = getSelectedDate();
     if (!currentDateFromStore) {
-        setDate(formatDateForAPI(new Date()));
+        setSelectedDate(formatDateForAPI(new Date()));
     }
     
     // Charger les types d'activités EN PREMIER
@@ -60,15 +61,14 @@ async function initializeEditor() {
     console.log('Affichage des activités...');
     displayActivities();
     
-    // Restaurer l'état des cartes dépliées
-    restoreExpandedCards();
+    // Note: restoreExpandedCards() est maintenant appelé automatiquement par displayActivities()
     
     // Afficher la page principale
     document.getElementById('editorPage').style.display = 'block';
     document.getElementById('loadingSection').style.display = 'none';
     
     // Mettre à jour les informations utilisateur
-    updateUserInfo(appStore.getCurrentUser());
+    updateUserInfo(globalStore.getUser());
     
     console.log('=== FIN INITIALISATION ÉDITEUR ===');
 }
@@ -77,11 +77,17 @@ async function initializeEditor() {
  * Restaurer l'état des cartes dépliées depuis le store
  */
 function restoreExpandedCards() {
+    console.log('=== RESTAURATION DES CARTES DÉPLIÉES ===');
+    console.log('État global actuel - expandedActivityCard:', getExpandedActivityCard());
+    
     // Restaurer la carte d'activité dépliée
-    const expandedActivityId = appStore.getExpandedActivityCard();
+    const expandedActivityId = getExpandedActivityCard();
+    console.log('ID de la carte d\'activité à restaurer:', expandedActivityId);
+    
     if (expandedActivityId) {
         const activityCard = document.querySelector(`[data-activity-id="${expandedActivityId}"]`);
         if (activityCard) {
+            console.log('Carte d\'activité trouvée, restauration...');
             const body = activityCard.querySelector('.content-card-body');
             if (body) {
                 body.style.display = 'block'; // Afficher le body
@@ -92,18 +98,24 @@ function restoreExpandedCards() {
                 if (detailsContent && !activityCard.dataset.responsiblesLoaded) {
                     const activity = activities.find(a => a.entry === expandedActivityId);
                     if (activity) {
+                        console.log('Chargement des données pour la carte restaurée...');
                         loadResponsiblesForCard(activityCard, activity, detailsContent);
                     }
                 }
             }
+        } else {
+            console.log('Carte d\'activité non trouvée dans le DOM - pas de restauration');
         }
     }
     
     // Restaurer la carte de tâche dépliée
-    const expandedTaskId = appStore.getExpandedTaskCard();
+    const expandedTaskId = getExpandedTaskCard();
+    console.log('ID de la carte de tâche à restaurer:', expandedTaskId);
+    
     if (expandedTaskId) {
         const taskItem = document.querySelector(`[data-task-id="${expandedTaskId}"]`);
         if (taskItem) {
+            console.log('Carte de tâche trouvée, restauration...');
             const expandableContent = taskItem.querySelector('.task-expandable-content');
             if (expandableContent) {
                 expandableContent.classList.add('expanded');
@@ -116,6 +128,10 @@ function restoreExpandedCards() {
                     taskItem.dataset.assignmentsLoaded = 'true';
                 }
             }
+        } else {
+            console.log('Carte de tâche non trouvée dans le DOM, effacement de l\'état...');
+            // Si la carte n'existe plus dans le DOM, effacer l'état
+            clearExpandedTaskCard();
         }
     }
 }
@@ -157,12 +173,12 @@ function createHeaderWithFilters() {
     headerContainer.appendChild(header);
     
     // Initialiser le sélecteur de date
-    const currentDateFromStore = getDate() || formatDateForAPI(new Date());
+    const currentDateFromStore = getSelectedDate() || formatDateForAPI(new Date());
     dateSelector = new DateSelector(dateSelectorContainer, {
         initialDate: new Date(currentDateFromStore),
         onDateChange: (dateStr) => {
             // Le DateSelector passe déjà une chaîne formatée YYYY-MM-DD
-            setDate(dateStr);
+            setSelectedDate(dateStr);
             console.log('Date sélectionnée via sélecteur :', dateStr);
             
             loadActivities().then(() => {
@@ -275,11 +291,20 @@ function generateTypeButtons() {
  */
 function selectType(type, buttonElement = null) {
     console.log(`Sélection du type: ${type}`);
+    
+    // Log de l'état avant changement de type
+    const previousExpandedId = getExpandedActivityCard();
+    console.log('État expanded avant changement de type:', previousExpandedId);
+    
     selectedType = type;
     document.querySelectorAll('.selection-btn--type').forEach(btn => btn.classList.remove('active'));
     if (buttonElement) buttonElement.classList.add('active');
+    
     loadActivities().then(() => {
         displayActivities();
+        // Restaurer l'état des cartes dépliées après changement de type
+        // Note: restoreExpandedCards() va automatiquement effacer l'état si l'activité n'existe plus
+        restoreExpandedCards();
     });
 }
 
@@ -287,10 +312,17 @@ function selectType(type, buttonElement = null) {
  * Charger les activités
  */
 async function loadActivities() {
-    const dateStr = getDate();
+    const dateStr = getSelectedDate();
     const typeParam = selectedType ? `&type=${encodeURIComponent(selectedType)}` : '';
     const url = `../../api/responsibilities/editor/editor.php?action=get_activities&date=${dateStr}${typeParam}`;
     console.log('Appel API loadActivities avec URL :', url);
+    
+    // Log de l'état avant chargement
+    const currentExpandedId = getExpandedActivityCard();
+    console.log('État expanded avant chargement:', currentExpandedId);
+    
+
+    
     try {
         const data = await apiRequest(url);
         
@@ -312,6 +344,14 @@ async function loadActivities() {
         }
         
         console.log('Activités chargées:', activities.length);
+        console.log('IDs des activités chargées:', activities.map(a => a.entry));
+        
+        // Log des activités chargées pour debug
+        if (currentExpandedId && activities.length > 0) {
+            const expandedActivityExists = activities.find(a => a.entry === currentExpandedId);
+            console.log('Activité expanded existe dans les nouvelles activités:', !!expandedActivityExists);
+        }
+        
     } catch (error) {
         console.error('Erreur lors du chargement des activités:', error);
         showMessage('Erreur lors du chargement des activités', 'error');
@@ -336,6 +376,12 @@ function displayActivities(activitiesToShow = activities) {
         const card = createActivityCard(activity);
         container.appendChild(card);
     });
+    
+    // Restaurer l'état des cartes dépliées après l'affichage
+    // Utiliser setTimeout pour s'assurer que le DOM est complètement rendu
+    setTimeout(() => {
+        restoreExpandedCards();
+    }, 10);
 }
 
 /**
@@ -434,16 +480,27 @@ function createActivityCard(activity) {
         toggleActivityCard(card, activity, detailsContent);
     });
     
+    // Vérifier si cette carte doit être dépliée selon l'état sauvegardé
+    const expandedActivityId = getExpandedActivityCard();
+    if (expandedActivityId === activity.entry) {
+        console.log('Carte créée avec état déplié:', activity.entry);
+        body.style.display = 'block';
+        card.classList.add('expanded');
+        // Charger les données immédiatement
+        loadResponsiblesForCard(card, activity, detailsContent);
+    }
+    
     return card;
 }
 
 /**
  * Basculer l'affichage d'une carte d'activité
+ * Assure qu'une seule carte d'activité soit dépliée à la fois
  */
 async function toggleActivityCard(card, activity, detailsContent) {
     const body = card.querySelector('.content-card-body');
     const isExpanded = body.style.display !== 'none'; // Vérifier l'affichage du body
-    const currentExpandedCardId = appStore.getExpandedActivityCard();
+    const currentExpandedCardId = getExpandedActivityCard();
     
     console.log('=== TOGGLE ACTIVITY CARD ===');
     console.log('Activity ID:', activity.entry);
@@ -457,27 +514,31 @@ async function toggleActivityCard(card, activity, detailsContent) {
         // Réduire la carte
         body.style.display = 'none';
         card.classList.remove('expanded');
-        appStore.clearExpandedActivityCard();
+        clearExpandedActivityCard();
         console.log('Card collapsed. Body display:', body.style.display);
+        console.log('État global après collapse:', getExpandedActivityCard());
     } else {
         console.log('EXPANDING card...');
-        // Fermer la carte précédemment dépliée si elle existe
-        if (currentExpandedCardId && currentExpandedCardId !== activity.entry) {
-            const previousCard = document.querySelector(`[data-activity-id="${currentExpandedCardId}"]`);
-            if (previousCard) {
-                const previousBody = previousCard.querySelector('.content-card-body');
-                if (previousBody) {
-                    previousBody.style.display = 'none';
-                    previousCard.classList.remove('expanded');
-                    console.log('Previous card collapsed');
+        
+        // Fermer TOUTES les autres cartes d'activité dépliées
+        const allActivityCards = document.querySelectorAll('.content-card[data-activity-id]');
+        allActivityCards.forEach(otherCard => {
+            if (otherCard !== card) {
+                const otherBody = otherCard.querySelector('.content-card-body');
+                if (otherBody && otherBody.style.display !== 'none') {
+                    otherBody.style.display = 'none';
+                    otherCard.classList.remove('expanded');
+                    console.log('Other card collapsed:', otherCard.dataset.activityId);
                 }
             }
-        }
+        });
         
         // Déplier la nouvelle carte
         body.style.display = 'block';
         card.classList.add('expanded');
-        appStore.setExpandedActivityCard(activity.entry);
+        console.log('Sauvegarde de l\'état global pour l\'activité:', activity.entry);
+        setExpandedActivityCard(activity.entry);
+        console.log('État global après expansion:', getExpandedActivityCard());
         console.log('Card expanded. Body display:', body.style.display);
         
         // Charger les responsables/tâches si pas encore fait
@@ -580,7 +641,7 @@ async function loadResponsiblesForCard(card, activity, detailsContent) {
  */
 async function loadResponsiblesData(card, activity, container) {
     try {
-        const dateStr = getDate();
+        const dateStr = getSelectedDate();
         const url = `../../api/responsibilities/editor/editor.php?action=get_responsible_for&activity=${activity.entry}&date=${dateStr}`;
         
         console.log('Chargement des responsables pour la carte:', url);
@@ -630,7 +691,7 @@ async function loadResponsiblesData(card, activity, container) {
  */
 async function loadTasksData(card, activity, container) {
     try {
-        const dateStr = getDate();
+        const dateStr = getSelectedDate();
         const tasks = await getActivityTasks(activity.entry, dateStr);
         
         if (!tasks || tasks.length === 0) {
@@ -1074,7 +1135,7 @@ function createResponsibleViewItem(responsible) {
  */
 async function loadActivityDetails(activityId) {
     try {
-        const dateStr = getDate();
+        const dateStr = getSelectedDate();
         const url = `../../api/responsibilities/editor/activities.php?action=get&entry=${activityId}&date=${dateStr}`;
         console.log('Chargement des détails de l\'activité:', url);
         const data = await apiRequest(url);
@@ -1300,14 +1361,14 @@ function createTaskViewItem(task) {
         // Empêcher la propagation du clic
         e.stopPropagation();
         
-        const currentExpandedTaskId = appStore.getExpandedTaskCard();
+        const currentExpandedTaskId = getExpandedTaskCard();
         
         if (expanded) {
             // Réduire la carte
             body.style.display = 'none';
             item.classList.remove('expanded');
             expanded = false;
-            appStore.clearExpandedTaskCard();
+            clearExpandedTaskCard();
         } else {
             // Fermer la carte précédemment dépliée si elle existe
             if (currentExpandedTaskId && currentExpandedTaskId !== task.task_id) {
@@ -1325,7 +1386,7 @@ function createTaskViewItem(task) {
             body.style.display = 'block';
             item.classList.add('expanded');
             expanded = true;
-            appStore.setExpandedTaskCard(task.task_id);
+            setExpandedTaskCard(task.task_id);
             
             // Charger les assignations si pas encore fait
             if (!item.dataset.assignmentsLoaded) {
@@ -1343,7 +1404,7 @@ function createTaskViewItem(task) {
  */
 async function loadTaskAssignments(taskId, container) {
     try {
-        const dateStr = getDate();
+        const dateStr = getSelectedDate();
         const url = `../../api/responsibilities/editor/editor.php?action=get_assigned_to&task=${taskId}&date=${dateStr}`;
         
         console.log('Chargement des assignations pour la tâche:', url);

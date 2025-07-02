@@ -2,6 +2,9 @@
 // Note: Les imports ES6 ne fonctionnent pas sans type="module", 
 // donc nous utilisons des fonctions locales pour l'instant
 
+// Import du store global pour l'instancier en amont
+import { globalStore } from '../modules/store/store.js';
+
 async function checkAuth() {
     try {
         const response = await fetch('/api/common/auth.php', {

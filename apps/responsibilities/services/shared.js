@@ -6,7 +6,7 @@ import { createResponsibleBadge, createAssignmentBadge } from '/modules/componen
 import { initializeBackButtons } from '/modules/components/app-header.js';
 import { updateUserInfo, loadAndUpdateUserInfo } from '/modules/components/user-info.js';
 import { apiRequest, checkAuth } from '/shared/api-client.js';
-import { appStore } from '/modules/store/store.js';
+import { globalStore } from '/modules/store/store.js';
 
 /**
  * Afficher l'erreur d'authentification
@@ -26,7 +26,7 @@ async function checkAuthAndLoadData() {
         const user = await checkAuth();
         
         // Stocker l'utilisateur dans le store centralisé
-        appStore.setCurrentUser(user);
+        globalStore.setUser(user);
         
         // Utiliser le module partagé pour mettre à jour les informations utilisateur
         updateUserInfo(user);

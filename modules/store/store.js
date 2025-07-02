@@ -1,38 +1,11 @@
 // modules/store/store.js
-import { formatDateForAPI } from '../utils/date-utils.js';
-
-export class AppStore {
+export class GlobalStore {
     constructor() {
         this.state = {
-            // État global partagé
+            // État global partagé uniquement
             user: null,
-            currentApp: 'responsibilities',
-            
-            // État responsibilities (application)
-            responsibilities: {
-                // État partagé au niveau de l'app
-                date: formatDateForAPI(new Date()), // Date par défaut : aujourd'hui (YYYY-MM-DD)
-                
-                // État individual-view
-                individual: {
-                    selectedWorker: null,
-                    responsibilityFilter: 'all', // 'all', 'responsible', 'other'
-                    expandedCardsByWorker: {} // Cartes dépliées par worker: { workerId: [cardIds] }
-                },
-                
-                // État global-view
-                global: {
-                    selectedActivityType: null,
-                    expandedCards: [] // Cartes dépliées globalement (pas par date)
-                },
-                
-                // État editor
-                editor: {
-                    expandedActivityCard: null, // ID de la carte d'activité dépliée
-                    expandedTaskCard: null, // ID de la carte de tâche dépliée
-                    expandedCardsByDate: {} // Cartes dépliées par date: { date: { activityCard: id, taskCard: id } }
-                }
-            }
+            currentApp: 'responsibilities'
+            // Plus d'état responsibilities ici !
         };
         
         this.listeners = new Map();
@@ -85,7 +58,7 @@ export class AppStore {
      * Récupère l'utilisateur actuel
      * @returns {Object|null} L'utilisateur actuel ou null
      */
-    getCurrentUser() {
+    getUser() {
         return this.getState('user');
     }
     
@@ -93,7 +66,7 @@ export class AppStore {
      * Définit l'utilisateur actuel
      * @param {Object} user - L'objet utilisateur
      */
-    setCurrentUser(user) {
+    setUser(user) {
         this.setState('user', user);
     }
     
@@ -130,70 +103,7 @@ export class AppStore {
     subscribeToApp(callback) {
         return this.subscribe('currentApp', callback);
     }
-    
-    // Méthodes spécifiques pour l'editor
-    setExpandedActivityCard(activityId) {
-        const currentDate = this.getState('responsibilities.date');
-        const currentState = this.getState('responsibilities.editor.expandedCardsByDate')[currentDate] || {};
-        
-        this.setState('responsibilities.editor.expandedCardsByDate', {
-            ...this.getState('responsibilities.editor.expandedCardsByDate'),
-            [currentDate]: {
-                ...currentState,
-                activityCard: activityId
-            }
-        });
-    }
-    
-    setExpandedTaskCard(taskId) {
-        const currentDate = this.getState('responsibilities.date');
-        const currentState = this.getState('responsibilities.editor.expandedCardsByDate')[currentDate] || {};
-        
-        this.setState('responsibilities.editor.expandedCardsByDate', {
-            ...this.getState('responsibilities.editor.expandedCardsByDate'),
-            [currentDate]: {
-                ...currentState,
-                taskCard: taskId
-            }
-        });
-    }
-    
-    getExpandedActivityCard() {
-        const currentDate = this.getState('responsibilities.date');
-        return this.getState('responsibilities.editor.expandedCardsByDate')[currentDate]?.activityCard || null;
-    }
-    
-    getExpandedTaskCard() {
-        const currentDate = this.getState('responsibilities.date');
-        return this.getState('responsibilities.editor.expandedCardsByDate')[currentDate]?.taskCard || null;
-    }
-    
-    clearExpandedActivityCard() {
-        const currentDate = this.getState('responsibilities.date');
-        const currentState = this.getState('responsibilities.editor.expandedCardsByDate')[currentDate] || {};
-        
-        this.setState('responsibilities.editor.expandedCardsByDate', {
-            ...this.getState('responsibilities.editor.expandedCardsByDate'),
-            [currentDate]: {
-                ...currentState,
-                activityCard: null
-            }
-        });
-    }
-    
-    clearExpandedTaskCard() {
-        const currentDate = this.getState('responsibilities.date');
-        const currentState = this.getState('responsibilities.editor.expandedCardsByDate')[currentDate] || {};
-        
-        this.setState('responsibilities.editor.expandedCardsByDate', {
-            ...this.getState('responsibilities.editor.expandedCardsByDate'),
-            [currentDate]: {
-                ...currentState,
-                taskCard: null
-            }
-        });
-    }
 }
 
 // Instance globale partagée
-export const appStore = new AppStore(); 
+export const globalStore = new GlobalStore(); 

@@ -8,8 +8,8 @@ import {
     createResponsibleBadge,
     createAssignmentBadge
 } from '../../services/shared.js';
-import { getDate, setDate } from '/modules/store/responsibilities.js';
-import { appStore } from '/modules/store/store.js';
+import { getSelectedDate, setSelectedDate } from '/modules/store/responsibilities.js';
+import { globalStore } from '/modules/store/store.js';
 import { createAppHeader } from '/modules/components/app-header.js';
 import { updateUserInfo } from '/modules/components/user-info.js';
 import { formatActivityNameEscaped, formatTypeName } from '/modules/utils/activity-formatter.js';
@@ -62,13 +62,13 @@ document.addEventListener('DOMContentLoaded', async function() {
             headerContainer.appendChild(header);
             
             // Initialiser le sélecteur de date avec la date du store
-            const currentDateFromStore = getDate() || formatDateForAPI(new Date());
+            const currentDateFromStore = getSelectedDate() || formatDateForAPI(new Date());
             dateSelector = new DateSelector(dateSelectorContainer, {
                 initialDate: new Date(currentDateFromStore),
                 onDateChange: (dateStr) => {
                     if (!selectedType) return; // Ne rien faire si pas de type sélectionné
                     // Le DateSelector passe déjà une chaîne formatée YYYY-MM-DD
-                    setDate(dateStr);
+                    setSelectedDate(dateStr);
                     displayDataForCurrentSelection();
                 }
             });
@@ -77,7 +77,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             Array.from(dateSelectorContainer.querySelectorAll('button')).forEach(btn => btn.disabled = true);
             
             // Mettre à jour les informations utilisateur après la création du header
-            updateUserInfo(appStore.getCurrentUser());
+            updateUserInfo(globalStore.getUser());
             
             document.getElementById('globalViewPage').style.display = 'block';
             document.getElementById('loadingSection').style.display = 'none';
@@ -173,7 +173,7 @@ async function displayDataForCurrentSelection() {
     if (!selectedType) return;
     
     try {
-        const dateStr = getDate() || formatDateForAPI(new Date());
+        const dateStr = getSelectedDate() || formatDateForAPI(new Date());
         const url = `responsibilities/global-view/global-view.php?action=get_responsibilities&date=${dateStr}&type=${encodeURIComponent(selectedType)}`;
         
         console.log('Chargement des données pour:', selectedType, 'à la date:', dateStr);

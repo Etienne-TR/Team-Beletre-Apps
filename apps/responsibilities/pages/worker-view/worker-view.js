@@ -8,8 +8,8 @@ import {
     createResponsibleBadge,
     createAssignmentBadge
 } from '../../services/shared.js';
-import { getDate, setDate } from '/modules/store/responsibilities.js';
-import { appStore } from '/modules/store/store.js';
+import { getSelectedDate, setSelectedDate, getExpandedActivityCard } from '/modules/store/responsibilities.js';
+import { globalStore } from '/modules/store/store.js';
 import { createAppHeader } from '/modules/components/app-header.js';
 import { updateUserInfo } from '/modules/components/user-info.js';
 import { formatActivityNameEscaped, formatTypeName } from '/modules/utils/activity-formatter.js';
@@ -37,9 +37,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         const authSuccess = await checkAuthAndLoadData();
         if (authSuccess) {
             // Initialiser la date dans le store si pas encore définie
-            let currentDateFromStore = getDate();
+            let currentDateFromStore = getSelectedDate();
             if (!currentDateFromStore) {
-                setDate(formatDateForAPI(new Date()));
+                setSelectedDate(formatDateForAPI(new Date()));
                 currentDateFromStore = formatDateForAPI(new Date());
             }
             
@@ -74,13 +74,13 @@ document.addEventListener('DOMContentLoaded', async function() {
             headerContainer.appendChild(header);
             
             // Initialiser le sélecteur de date avec la date du store
-            const initialDate = getDate() || formatDateForAPI(new Date());
+            const initialDate = getSelectedDate() || formatDateForAPI(new Date());
             dateSelector = new DateSelector(dateSelectorContainer, {
                 initialDate: new Date(initialDate),
                 onDateChange: (dateStr) => {
                     console.log('DateSelector.onDateChange - nouvelle date:', dateStr);
                     // Le DateSelector passe déjà une chaîne formatée YYYY-MM-DD
-                    setDate(dateStr);
+                    setSelectedDate(dateStr);
                     loadWorkersForDate(dateStr).then(() => {
                         if (selectedWorkerId) {
                             loadWorkerData(selectedWorkerId, dateStr);
@@ -90,7 +90,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             });
             
             // Mettre à jour les informations utilisateur après la création du header
-            updateUserInfo(appStore.getCurrentUser());
+            updateUserInfo(globalStore.getUser());
             
             document.getElementById('workerPage').style.display = 'block';
             document.getElementById('loadingSection').style.display = 'none';
@@ -98,7 +98,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             setupEventListeners();
             
             // Charger les travailleurs pour la date actuelle
-            await loadWorkersForDate(getDate());
+            await loadWorkersForDate(getSelectedDate());
         }
     } catch (error) {
         console.error('Erreur lors de l\'initialisation:', error);
@@ -123,7 +123,7 @@ function setupEventListeners() {
             const userId = this.value;
             if (userId) {
                 selectedWorkerId = userId;
-                loadWorkerData(userId, getDate());
+                loadWorkerData(userId, getSelectedDate());
             } else {
                 selectedWorkerId = null;
                 clearWorkerActivities();
@@ -145,7 +145,7 @@ function selectContent(content, buttonElement = null) {
     
     // Si un travailleur est sélectionné, recharger ses données
     if (selectedWorkerId) {
-        loadWorkerData(selectedWorkerId, getDate());
+        loadWorkerData(selectedWorkerId, getSelectedDate());
     }
 }
 
@@ -338,15 +338,15 @@ async function loadWorkerActivitiesNotResponsible(userId, date) {
 }
 
 function displaySelectedContent() {
-    if (!selectedWorkerId || !getDate()) {
+    if (!selectedWorkerId || !getSelectedDate()) {
         console.log('Aucun travailleur ou date sélectionnée, rien à afficher');
         return;
     }
     
-    console.log(`Affichage du contenu pour ${selectedWorkerId} à la date ${getDate()}, type: ${selectedContent}`);
+    console.log(`Affichage du contenu pour ${selectedWorkerId} à la date ${getSelectedDate()}, type: ${selectedContent}`);
     
-    const dateStr = formatDateForAPI(getDate());
-    const cacheKey = `${selectedWorkerId}-${getDate()}-${selectedContent}`;
+    const dateStr = formatDateForAPI(getSelectedDate());
+    const cacheKey = `${selectedWorkerId}-${getSelectedDate()}-${selectedContent}`;
     
     // Récupérer les données du cache
     let activitiesData = [];
@@ -383,6 +383,11 @@ function displaySelectedContent() {
             container.appendChild(card);
         });
         
+        // Restaurer l'état des cartes dépliées après l'affichage
+        setTimeout(() => {
+            restoreExpandedActivityCards();
+        }, 10);
+        
         document.getElementById('workerEmptyState').style.display = 'none';
     } else {
         console.log(`Aucune activité trouvée pour l'utilisateur ${selectedWorkerId} à la date ${dateStr}`);
@@ -402,4 +407,27 @@ function clearWorkerActivities() {
     const container = document.getElementById('workerActivitiesContainer');
     container.innerHTML = '';
     document.getElementById('workerEmptyState').style.display = 'block';
+}
+
+/**
+ * Restaurer l'état des cartes d'activité dépliées depuis le store
+ */
+function restoreExpandedActivityCards() {
+    console.log('=== RESTAURATION DES CARTES DÉPLIÉES WORKER-VIEW ===');
+    console.log('État global actuel - expandedActivityCard:', getExpandedActivityCard());
+    
+    const expandedActivityId = getExpandedActivityCard();
+    if (expandedActivityId) {
+        const activityCard = document.querySelector(`[data-card-id="${expandedActivityId}"]`);
+        if (activityCard) {
+            console.log('Carte d\'activité trouvée, restauration...');
+            const detailedContent = activityCard.querySelector('.detailed-content');
+            if (detailedContent) {
+                detailedContent.style.display = 'block';
+                activityCard.classList.add('expanded');
+            }
+        } else {
+            console.log('Carte d\'activité non trouvée dans le DOM - pas de restauration');
+        }
+    }
 }

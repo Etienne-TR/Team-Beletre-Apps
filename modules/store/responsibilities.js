@@ -1,196 +1,137 @@
-import { appStore } from './store.js';
+import { globalStore } from './store.js';
 import { formatDateForAPI } from '../utils/date-utils.js';
 
-// ===== ACTIONS POUR L'ÉTAT PARTAGÉ =====
+// État initial de responsibilities
+const initialState = {
+    selectedDate: formatDateForAPI(new Date()),
+    selectedActivityType: null,
+    expandedActivityCard: null,
+    individual: {
+        selectedWorker: null,
+        responsibleForFilter: null
+    },
+    editor: {
+        expandedTaskCard: null
+    }
+};
+
+// Initialiser l'état responsibilities dans le store global
+globalStore.setState('responsibilities', initialState);
+console.log('=== INITIALISATION STORE RESPONSIBILITIES ===');
+console.log('État initial responsibilities:', globalStore.getState('responsibilities'));
+
+// ===== ACTIONS POUR L'ÉTAT PARTAGÉ (responsibilities) =====
 
 /**
  * Change la date sélectionnée (partagée entre toutes les vues)
  * @param {string} date - Date au format YYYY-MM-DD
  */
-export function setDate(date) {
-    appStore.setState('responsibilities', { date });
+export function setSelectedDate(date) {
+    globalStore.setState('responsibilities', { selectedDate: date });
 }
 
 /**
  * Récupère la date actuellement sélectionnée
  * @returns {string} Date au format YYYY-MM-DD
  */
-export function getDate() {
-    return appStore.getState('responsibilities.date');
+export function getSelectedDate() {
+    return globalStore.getState('responsibilities.selectedDate');
 }
 
 /**
- * Change l'année sélectionnée (partagée entre toutes les vues)
- * @deprecated Utilisez setDate() à la place
+ * Sélectionne un type d'activité
+ * @param {string} type - Type d'activité sélectionné
  */
-export function setYear(year) {
-    console.warn('setYear() est déprécié, utilisez setDate() à la place');
-    const currentDate = getDate() || formatDateForAPI(new Date());
-    const [_, month, day] = currentDate.split('-');
-    const newDate = `${year}-${month}-${day}`;
-    setDate(newDate);
+export function setSelectedActivityType(type) {
+    globalStore.setState('responsibilities', { selectedActivityType: type });
 }
 
 /**
- * Récupère l'année actuellement sélectionnée
- * @deprecated Utilisez getDate() à la place
+ * Récupère le type d'activité actuellement sélectionné
+ * @returns {string} Type d'activité sélectionné
  */
-export function getYear() {
-    console.warn('getYear() est déprécié, utilisez getDate() à la place');
-    const date = getDate();
-    return date ? date.substring(0, 4) : new Date().getFullYear().toString();
+export function getSelectedActivityType() {
+    return globalStore.getState('responsibilities.selectedActivityType');
+}
+
+/**
+ * Définit la carte d'activité dépliée
+ * @param {string} cardId - ID de la carte d'activité dépliée
+ */
+export function setExpandedActivityCard(cardId) {
+    globalStore.setState('responsibilities', { expandedActivityCard: cardId });
+}
+
+/**
+ * Récupère l'ID de la carte d'activité dépliée
+ * @returns {string|null} ID de la carte d'activité dépliée ou null
+ */
+export function getExpandedActivityCard() {
+    return globalStore.getState('responsibilities.expandedActivityCard');
+}
+
+/**
+ * Efface la carte d'activité dépliée
+ */
+export function clearExpandedActivityCard() {
+    globalStore.setState('responsibilities', { expandedActivityCard: null });
+}
+
+// ===== ACTIONS POUR EDITOR VIEW =====
+
+/**
+ * Définit la carte de tâche dépliée
+ * @param {string} taskCardId - ID de la carte de tâche dépliée
+ */
+export function setExpandedTaskCard(taskCardId) {
+    globalStore.setState('responsibilities.editor', { expandedTaskCard: taskCardId });
+}
+
+/**
+ * Récupère l'ID de la carte de tâche dépliée
+ * @returns {string|null} ID de la carte de tâche dépliée ou null
+ */
+export function getExpandedTaskCard() {
+    return globalStore.getState('responsibilities.editor.expandedTaskCard');
+}
+
+/**
+ * Efface la carte de tâche dépliée
+ */
+export function clearExpandedTaskCard() {
+    globalStore.setState('responsibilities.editor', { expandedTaskCard: null });
 }
 
 // ===== ACTIONS POUR INDIVIDUAL VIEW =====
 
 /**
  * Sélectionne un worker dans la vue individual
+ * @param {string} workerId - ID du worker sélectionné
  */
-export function selectWorker(workerId) {
-    appStore.setState('responsibilities.individual', { selectedWorker: workerId });
+export function setSelectedWorker(workerId) {
+    globalStore.setState('responsibilities.individual', { selectedWorker: workerId });
+}
+
+/**
+ * Récupère le worker actuellement sélectionné
+ * @returns {string|null} ID du worker sélectionné ou null
+ */
+export function getSelectedWorker() {
+    return globalStore.getState('responsibilities.individual.selectedWorker');
 }
 
 /**
  * Change le filtre de responsabilité (En responsabilité / Autre)
+ * @param {string} filter - Filtre de responsabilité
  */
-export function setResponsibilityFilter(filter) {
-    appStore.setState('responsibilities.individual', { responsibilityFilter: filter });
+export function setResponsibleForFilter(filter) {
+    globalStore.setState('responsibilities.individual', { responsibleForFilter: filter });
 }
 
 /**
- * Ajoute une carte à la liste des cartes dépliées
+ * Récupère le filtre de responsabilité actuel
+ * @returns {string} Filtre de responsabilité
  */
-export function expandCard(cardId, workerId = null) {
-    const state = appStore.getState('responsibilities.individual');
-    const { expandedCardsByWorker } = state;
-    
-    // Utiliser le worker sélectionné si aucun worker n'est fourni
-    const targetWorker = workerId || state.selectedWorker;
-    
-    if (!targetWorker) {
-        console.warn('Aucun worker sélectionné pour expandCard');
-        return;
-    }
-    
-    // Initialiser le tableau pour ce worker si nécessaire
-    if (!expandedCardsByWorker[targetWorker]) {
-        expandedCardsByWorker[targetWorker] = [];
-    }
-    
-    if (!expandedCardsByWorker[targetWorker].includes(cardId)) {
-        appStore.setState('responsibilities.individual', {
-            expandedCardsByWorker: {
-                ...expandedCardsByWorker,
-                [targetWorker]: [...expandedCardsByWorker[targetWorker], cardId]
-            }
-        });
-    }
-}
-
-/**
- * Retire une carte de la liste des cartes dépliées
- */
-export function collapseCard(cardId, workerId = null) {
-    const state = appStore.getState('responsibilities.individual');
-    const { expandedCardsByWorker } = state;
-    
-    // Utiliser le worker sélectionné si aucun worker n'est fourni
-    const targetWorker = workerId || state.selectedWorker;
-    
-    if (!targetWorker) {
-        console.warn('Aucun worker sélectionné pour collapseCard');
-        return;
-    }
-    
-    if (expandedCardsByWorker[targetWorker]) {
-        appStore.setState('responsibilities.individual', {
-            expandedCardsByWorker: {
-                ...expandedCardsByWorker,
-                [targetWorker]: expandedCardsByWorker[targetWorker].filter(id => id !== cardId)
-            }
-        });
-    }
-}
-
-/**
- * Vérifie si une carte est dépliée
- */
-export function isCardExpanded(cardId, workerId = null) {
-    const state = appStore.getState('responsibilities.individual');
-    const { expandedCardsByWorker } = state;
-    
-    // Utiliser le worker sélectionné si aucun worker n'est fourni
-    const targetWorker = workerId || state.selectedWorker;
-    
-    if (!targetWorker) {
-        return false;
-    }
-    
-    return expandedCardsByWorker[targetWorker] ? expandedCardsByWorker[targetWorker].includes(cardId) : false;
-}
-
-// ===== ACTIONS POUR GLOBAL VIEW =====
-
-/**
- * Sélectionne un type d'activité dans la vue globale
- */
-export function selectActivityType(type) {
-    appStore.setState('responsibilities.global', { selectedActivityType: type });
-}
-
-/**
- * Ajoute une carte à la liste des cartes dépliées (vue globale)
- */
-export function expandGlobalCard(cardId) {
-    const state = appStore.getState('responsibilities.global');
-    const { expandedCards } = state;
-    
-    if (!expandedCards.includes(cardId)) {
-        appStore.setState('responsibilities.global', {
-            expandedCards: [...expandedCards, cardId]
-        });
-    }
-}
-
-/**
- * Retire une carte de la liste des cartes dépliées (vue globale)
- */
-export function collapseGlobalCard(cardId) {
-    const state = appStore.getState('responsibilities.global');
-    const { expandedCards } = state;
-    
-    appStore.setState('responsibilities.global', {
-        expandedCards: expandedCards.filter(id => id !== cardId)
-    });
-}
-
-/**
- * Vérifie si une carte est dépliée (vue globale)
- */
-export function isGlobalCardExpanded(cardId) {
-    const state = appStore.getState('responsibilities.global');
-    return state.expandedCards.includes(cardId);
-}
-
-// ===== GETTERS =====
-
-/**
- * Récupère l'état complet de la vue individual
- */
-export function getIndividualState() {
-    return appStore.getState('responsibilities.individual');
-}
-
-/**
- * Récupère l'état complet de la vue globale
- */
-export function getGlobalState() {
-    return appStore.getState('responsibilities.global');
-}
-
-/**
- * Récupère l'état complet des responsibilities
- */
-export function getResponsibilitiesState() {
-    return appStore.getState('responsibilities');
+export function getResponsibleForFilter() {
+    return globalStore.getState('responsibilities.individual.responsibleForFilter');
 } 

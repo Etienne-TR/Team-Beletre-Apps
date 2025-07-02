@@ -8,12 +8,9 @@ import {
 import { formatActivityNameEscaped } from '/modules/utils/activity-formatter.js';
 import { formatActivityDescription } from '/modules/utils/activity-description.js';
 import { 
-    expandCard, 
-    collapseCard, 
-    isCardExpanded,
-    expandGlobalCard,
-    collapseGlobalCard,
-    isGlobalCardExpanded
+    setExpandedActivityCard,
+    getExpandedActivityCard,
+    clearExpandedActivityCard
 } from '/modules/store/responsibilities.js';
 
 /**
@@ -140,22 +137,26 @@ function setupCardToggle(card, header, cardId, options = {}) {
             card.classList.remove('expanded');
             
             // Mémoriser dans le store
-            if (options.isGlobalView) {
-                collapseGlobalCard(cardId);
-            } else {
-                collapseCard(cardId, options.selectedWorkerId);
-            }
+            clearExpandedActivityCard();
         } else {
+            // Fermer toutes les autres cartes d'activité dépliées
+            const allActivityCards = document.querySelectorAll('.activity-card');
+            allActivityCards.forEach(otherCard => {
+                if (otherCard !== card) {
+                    const otherContent = otherCard.querySelector('.detailed-content');
+                    if (otherContent && otherContent.style.display !== 'none') {
+                        otherContent.style.display = 'none';
+                        otherCard.classList.remove('expanded');
+                    }
+                }
+            });
+            
             // Développer
             detailedContent.style.display = 'block';
             card.classList.add('expanded');
             
             // Mémoriser dans le store
-            if (options.isGlobalView) {
-                expandGlobalCard(cardId);
-            } else {
-                expandCard(cardId, options.selectedWorkerId);
-            }
+            setExpandedActivityCard(cardId);
         }
     });
     
@@ -298,24 +299,25 @@ function setupTaskCardToggle(taskCard, taskHeader, taskCardId, options = {}) {
             // Réduire
             taskDescription.style.display = 'none';
             taskCard.classList.remove('expanded');
-            
-            // Mémoriser dans le store
-            if (options.isGlobalView) {
-                collapseGlobalCard(taskCardId);
-            } else {
-                collapseCard(taskCardId, options.selectedWorkerId);
-            }
         } else {
+            // Fermer toutes les autres cartes de tâches dépliées dans le même conteneur
+            const parentContainer = taskCard.closest('.tasks-list, .tasks-section');
+            if (parentContainer) {
+                const allTaskCards = parentContainer.querySelectorAll('.task-card');
+                allTaskCards.forEach(otherTaskCard => {
+                    if (otherTaskCard !== taskCard) {
+                        const otherDescription = otherTaskCard.querySelector('.task-description');
+                        if (otherDescription && otherDescription.style.display !== 'none') {
+                            otherDescription.style.display = 'none';
+                            otherTaskCard.classList.remove('expanded');
+                        }
+                    }
+                });
+            }
+            
             // Développer
             taskDescription.style.display = 'block';
             taskCard.classList.add('expanded');
-            
-            // Mémoriser dans le store
-            if (options.isGlobalView) {
-                expandGlobalCard(taskCardId);
-            } else {
-                expandCard(taskCardId, options.selectedWorkerId);
-            }
         }
     });
     
@@ -397,12 +399,8 @@ function restoreCardState(card, cardId, options = {}) {
     let isExpanded = false;
     
     // Vérifier l'état dans le store
-    if (options.isGlobalView) {
-        isExpanded = isGlobalCardExpanded(cardId);
-    } else {
-        // Pour la vue des travailleurs, utiliser le worker sélectionné
-        isExpanded = isCardExpanded(cardId, options.selectedWorkerId);
-    }
+    const expandedCardId = getExpandedActivityCard();
+    isExpanded = expandedCardId === cardId;
     
     // Appliquer l'état restauré
     if (isExpanded) {
@@ -415,29 +413,15 @@ function restoreCardState(card, cardId, options = {}) {
 }
 
 /**
- * Restaure l'état d'une carte de tâche depuis le store
+ * Restaure l'état d'une carte de tâche (pas de persistance pour les tâches)
  * @param {HTMLElement} taskCard - La carte de tâche
  * @param {string} taskCardId - L'ID unique de la carte de tâche
  * @param {Object} options - Options de configuration
  */
 function restoreTaskCardState(taskCard, taskCardId, options = {}) {
     const taskDescription = taskCard.querySelector('.task-description');
-    let isExpanded = false;
     
-    // Vérifier l'état dans le store
-    if (options.isGlobalView) {
-        isExpanded = isGlobalCardExpanded(taskCardId);
-    } else {
-        // Pour la vue des travailleurs, utiliser le worker sélectionné
-        isExpanded = isCardExpanded(taskCardId, options.selectedWorkerId);
-    }
-    
-    // Appliquer l'état restauré
-    if (isExpanded) {
-        taskDescription.style.display = 'block';
-        taskCard.classList.add('expanded');
-    } else {
-        taskDescription.style.display = 'none';
-        taskCard.classList.remove('expanded');
-    }
+    // Les cartes de tâches ne persistent pas leur état, elles restent fermées par défaut
+    taskDescription.style.display = 'none';
+    taskCard.classList.remove('expanded');
 } 
