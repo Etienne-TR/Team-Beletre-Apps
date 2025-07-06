@@ -10,7 +10,10 @@ import { formatActivityDescription } from '/modules/utils/activity-description.j
 import { 
     setExpandedActivityCard,
     getExpandedActivityCard,
-    clearExpandedActivityCard
+    clearExpandedActivityCard,
+    setWorkerExpandedActivityCard,
+    clearWorkerExpandedActivityCard,
+    getWorkerExpandedActivityCard
 } from '/modules/store/responsibilities.js';
 
 /**
@@ -136,22 +139,39 @@ function setupCardToggle(card, header, cardId, options = {}) {
             detailedContent.classList.add('content-card-body--collapsed');
             card.classList.remove('expanded');
             
-            // Mémoriser dans le store
-            clearExpandedActivityCard();
+            // Mémoriser dans le store selon le contexte
+            if (options.isGlobalView === false) {
+                // Vue worker - utiliser les fonctions worker
+                clearWorkerExpandedActivityCard();
+            } else {
+                // Vue globale/éditeur - utiliser les fonctions globales
+                clearExpandedActivityCard();
+            }
         } else {
             // Développer
             detailedContent.classList.remove('content-card-body--collapsed');
             detailedContent.classList.add('content-card-body--expanded');
             card.classList.add('expanded');
             
-            // Mémoriser dans le store (sauvegarder l'entry de l'activité)
+            // Mémoriser dans le store selon le contexte
             const activityEntry = cardId.replace('activity-', '');
-            console.log('=== CLIC CARTE GLOBAL-VIEW ===');
-            console.log('cardId:', cardId);
-            console.log('activityEntry:', activityEntry);
-            console.log('Appel de setExpandedActivityCard...');
-            setExpandedActivityCard(activityEntry);
-            console.log('setExpandedActivityCard appelé');
+            if (options.isGlobalView === false) {
+                // Vue worker - utiliser les fonctions worker
+                console.log('=== CLIC CARTE WORKER-VIEW ===');
+                console.log('cardId:', cardId);
+                console.log('activityEntry:', activityEntry);
+                console.log('Appel de setWorkerExpandedActivityCard...');
+                setWorkerExpandedActivityCard(activityEntry);
+                console.log('setWorkerExpandedActivityCard appelé');
+            } else {
+                // Vue globale/éditeur - utiliser les fonctions globales
+                console.log('=== CLIC CARTE GLOBAL-VIEW ===');
+                console.log('cardId:', cardId);
+                console.log('activityEntry:', activityEntry);
+                console.log('Appel de setExpandedActivityCard...');
+                setExpandedActivityCard(activityEntry);
+                console.log('setExpandedActivityCard appelé');
+            }
         }
     });
     
@@ -395,11 +415,17 @@ function restoreCardState(card, cardId, options = {}) {
     const detailedContent = card.querySelector('.content-card-body');
     let isExpanded = false;
     
-    // Vérifier l'état dans le store
-    const expandedCardId = getExpandedActivityCard();
-    // Le store contient l'entry de l'activité, pas l'ID de la carte
+    // Vérifier l'état dans le store selon le contexte
     const activityEntry = cardId.replace('activity-', '');
-    isExpanded = expandedCardId === activityEntry;
+    if (options.isGlobalView === false) {
+        // Vue worker - utiliser les fonctions worker
+        const expandedCardId = getWorkerExpandedActivityCard();
+        isExpanded = expandedCardId === activityEntry;
+    } else {
+        // Vue globale/éditeur - utiliser les fonctions globales
+        const expandedCardId = getExpandedActivityCard();
+        isExpanded = expandedCardId === activityEntry;
+    }
     
     // Appliquer l'état restauré
     if (isExpanded) {

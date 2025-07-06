@@ -3,17 +3,16 @@
  * Classe de base pour toutes les APIs
  * 
  * Fournit les fonctionnalités communes : authentification,
- * gestion des réponses JSON, et accès à EntityManager.
+ * gestion des réponses JSON, et accès aux services.
  */
 abstract class BaseAPI {
     protected $pdo;
     protected $currentUser;
-    protected $entityManager;
     
     public function __construct() {
         $this->checkAuth();
         $this->setupDatabase();
-        $this->setupEntityManager();
+        $this->initializeServices();
         $this->handleRequest();
     }
     
@@ -57,12 +56,13 @@ abstract class BaseAPI {
         // Déjà fait dans checkAuth()
     }
     
+
+    
     /**
-     * Configuration d'EntityManager
+     * Initialisation des services (à surcharger dans les contrôleurs enfants)
      */
-    protected function setupEntityManager() {
-        require_once __DIR__ . '/entity-manager.php';
-        $this->entityManager = new EntityManager($this->pdo, $this->currentUser);
+    protected function initializeServices() {
+        // Méthode vide par défaut, à surcharger si nécessaire
     }
     
     /**

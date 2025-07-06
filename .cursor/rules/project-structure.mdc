@@ -1,0 +1,43 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Structure du Projet Team Apps
+
+## Vue d'ensemble
+Team Apps est une application web modulaire pour la gestion d'équipe avec une architecture frontend/backend séparée.
+
+## Architecture principale
+
+### Frontend (Applications)
+- **Point d'entrée** : [index.html](mdc:index.html) - Page d'accueil principale
+- **Applications** : [apps/](mdc:apps/) - Applications spécifiques
+  - [apps/responsibilities/](mdc:apps/responsibilities/) - Gestion des responsabilités
+  - [apps/admin/](mdc:apps/admin/) - Interface d'administration
+- **Modules partagés** : [modules/](mdc:modules/) - Composants et utilitaires réutilisables
+- **Ressources communes** : [shared/](mdc:shared/) - CSS, JS et composants globaux
+
+### Backend (API)
+- **API principale** : [api/](mdc:api/) - API PHP refactorisée
+- **Données** : [data/](mdc:data/) - Fichiers de données
+- **Documentation** : [docs/](mdc:docs/) - Documentation technique
+
+## Conventions de développement
+
+### Frontend
+- **JavaScript** : Modules ES6 avec imports/exports
+- **CSS** : Mobile-first avec breakpoints 768px et 480px
+- **HTML** : Structure sémantique avec composants modulaires
+- **Responsive** : Design adaptatif pour desktop/tablet/mobile
+
+### Backend
+- **PHP** : Architecture MVC avec contrôleurs/services/repositories
+- **Base de données** : MySQL avec système de versioning
+- **Authentification** : Système centralisé via Nextcloud
+
+## Points d'entrée principaux
+- **Application** : [index.html](mdc:index.html)
+- **API** : [api/](mdc:api/) avec [api/README.md](mdc:api/README.md)
+- **Modules** : [modules/README.md](mdc:modules/README.md)
+- **Shared** : [shared/README.md](mdc:shared/README.md)

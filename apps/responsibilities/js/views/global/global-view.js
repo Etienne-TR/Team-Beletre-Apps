@@ -196,26 +196,35 @@ function setupExpandedActivityCardChangeListener() {
     expandedActivityCardChangeListener = (cardId) => {
         console.log('Vue globale - Changement de carte dépliée détecté:', cardId);
         
-        // Fermer toutes les cartes d'abord
-        const allCards = document.querySelectorAll('.activity-card');
-        allCards.forEach(card => {
-            const body = card.querySelector('.content-card-body');
-            if (body) {
-                body.classList.remove('content-card-body--expanded');
-                body.classList.add('content-card-body--collapsed');
-                card.classList.remove('expanded');
-            }
-        });
-        
-        // Déplier la carte spécifiée si elle existe
-        if (cardId) {
-            const targetCard = document.querySelector(`[data-card-id="activity-${cardId}"]`);
-            if (targetCard) {
-                const body = targetCard.querySelector('.content-card-body');
+        // Fermer toutes les cartes de la vue globale d'abord
+        const globalContainer = document.getElementById('activitiesContainer');
+        if (globalContainer) {
+            const allGlobalCards = globalContainer.querySelectorAll('.activity-card');
+            allGlobalCards.forEach(card => {
+                const body = card.querySelector('.content-card-body');
                 if (body) {
-                    body.classList.remove('content-card-body--collapsed');
-                    body.classList.add('content-card-body--expanded');
-                    targetCard.classList.add('expanded');
+                    body.classList.remove('content-card-body--expanded');
+                    body.classList.add('content-card-body--collapsed');
+                    card.classList.remove('expanded');
+                }
+            });
+        }
+        
+        // Déplier la carte spécifiée si elle existe dans la vue globale
+        if (cardId) {
+            const globalContainer = document.getElementById('activitiesContainer');
+            if (globalContainer) {
+                const targetCard = globalContainer.querySelector(`[data-card-id="activity-${cardId}"]`);
+                if (targetCard) {
+                    const body = targetCard.querySelector('.content-card-body');
+                    if (body) {
+                        body.classList.remove('content-card-body--collapsed');
+                        body.classList.add('content-card-body--expanded');
+                        targetCard.classList.add('expanded');
+                        console.log('Carte globale dépliée avec succès:', cardId);
+                    }
+                } else {
+                    console.log('Carte globale non trouvée dans le conteneur global:', cardId);
                 }
             }
         }
@@ -228,18 +237,11 @@ function setupExpandedActivityCardChangeListener() {
 function selectType(type, buttonElement = null) {
     console.log(`Sélection du type: ${type}`);
     
-    // Mettre à jour l'état global (cela déclenchera automatiquement les écouteurs d'événements)
+    // Mettre à jour uniquement le store
     setSelectedActivityType(type);
     
-    // Mettre à jour la sélection visuelle DANS CETTE VUE SEULEMENT
-    const typeButtonsContainer = container.querySelector('.type-buttons');
-    if (typeButtonsContainer) {
-        typeButtonsContainer.querySelectorAll('.btn[data-type]').forEach(btn => btn.classList.remove('active'));
-    }
-    if (buttonElement) buttonElement.classList.add('active');
-    
-    // Afficher les données pour ce type
-    displayDataForCurrentSelection();
+    // Note: L'état visuel des boutons sera mis à jour automatiquement par l'écouteur du store
+    // Note: displayDataForCurrentSelection() sera appelé automatiquement par l'écouteur du store
 }
 
 /**
@@ -259,7 +261,7 @@ window.globalViewReloadData = reloadGlobalViewData;
  */
 async function loadActivityTypes() {
     try {
-        const url = 'responsibilities/global-view/global-view.php?action=get_activity_types';
+        const url = '../../api/controllers/responsibilities/global-controller.php?action=get_activity_types';
         const data = await apiRequest(url);
         availableTypes = data.data.activity_types.map(type => ({
             type_name: type.name,
@@ -297,13 +299,11 @@ function generateTypeButtons() {
         button.textContent = formatTypeName(type.type_name);
         button.dataset.type = type.type_name;
         
-        // Vérifier si ce type est actuellement sélectionné dans le store
+        // Note: L'état visuel des boutons sera mis à jour automatiquement par l'écouteur du store
+        // Si aucun type n'est sélectionné, sélectionner le premier par défaut
         const currentSelectedType = getSelectedActivityType();
         if (index === 0 && !currentSelectedType) {
-            button.classList.add('active');
             setSelectedActivityType(type.type_name);
-        } else if (currentSelectedType === type.type_name) {
-            button.classList.add('active');
         }
         
         button.addEventListener('click', function() {
@@ -322,7 +322,7 @@ async function displayDataForCurrentSelection() {
     
     try {
         const dateStr = getSelectedDate() || formatDateForAPI(new Date());
-        const url = `responsibilities/global-view/global-view.php?action=get_responsibilities&date=${dateStr}&type=${encodeURIComponent(selectedType)}`;
+        const url = `../../api/controllers/responsibilities/global-controller.php?action=get_responsibilities&date=${dateStr}&type=${encodeURIComponent(selectedType)}`;
         
         console.log('Chargement des données pour:', selectedType, 'à la date:', dateStr);
         
@@ -355,7 +355,7 @@ function displayActivities(activities) {
     container.innerHTML = '';
     
     activities.forEach(activity => {
-        const card = createActivityWithTasksCard(activity, activity.responsible, activity.tasks, {});
+        const card = createActivityWithTasksCard(activity, activity.responsible, activity.tasks, { isGlobalView: true });
         container.appendChild(card);
     });
 }

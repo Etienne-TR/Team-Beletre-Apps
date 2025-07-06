@@ -11,7 +11,11 @@ import {
 import { 
     getSelectedDate, 
     setSelectedDate, 
-    getExpandedActivityCard,
+    getWorkerExpandedActivityCard,
+    setWorkerExpandedActivityCard,
+    clearWorkerExpandedActivityCard,
+    getResponsibleForFilter,
+    setResponsibleForFilter,
     addEventListener,
     removeEventListener
 } from '/modules/store/responsibilities.js';
@@ -30,11 +34,12 @@ import { formatDateForAPI } from '/modules/utils/date-utils.js';
 
 // Variables spécifiques à la vue des travailleurs
 let selectedWorkerId = null; // ID du travailleur sélectionné
-let selectedContent = 'responsibilities'; // Type de contenu sélectionné
 let workersData = {}; // Cache des données des travailleurs
 let dateSelector = null; // Instance du sélecteur de date
 let container = null; // Conteneur de la vue
 let selectedDateChangeListener = null; // Écouteur de changement de date
+let responsibleForFilterChangeListener = null; // Écouteur de changement de filtre
+let workerExpandedActivityCardChangeListener = null; // Écouteur de changement de carte dépliée worker
 
 /**
  * Initialiser la vue des travailleurs
@@ -102,6 +107,18 @@ export async function initializeWorkerView(viewContainer) {
         
         setupEventListeners();
         
+        // Ajouter l'écouteur de changement de date
+        setupSelectedDateChangeListener();
+        
+        // Ajouter l'écouteur de changement de filtre
+        setupResponsibleForFilterChangeListener();
+        
+        // Ajouter l'écouteur de changement de carte dépliée worker
+        setupWorkerExpandedActivityCardChangeListener();
+        
+        // Restaurer l'état des boutons de filtre depuis le store
+        restoreFilterButtonsState();
+        
         // Charger les travailleurs pour la date actuelle
         await loadWorkersForDate(getSelectedDate());
         
@@ -109,9 +126,6 @@ export async function initializeWorkerView(viewContainer) {
         if (selectedWorkerId) {
             displaySelectedContent();
         }
-        
-        // Ajouter l'écouteur de changement de date
-        setupSelectedDateChangeListener();
         
         console.log('Vue des travailleurs initialisée avec succès');
         
@@ -122,13 +136,18 @@ export async function initializeWorkerView(viewContainer) {
 }
 
 function setupEventListeners() {
-    // Gestion des boutons de contenu
-    document.querySelectorAll('.btn-group-container .btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const content = this.dataset.content;
-            selectContent(content, this);
+    // Gestion des boutons de contenu (limités à la vue worker)
+    const workerButtonsContainer = container.querySelector('.btn-group-container');
+    if (workerButtonsContainer) {
+        workerButtonsContainer.querySelectorAll('.btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const content = this.dataset.content;
+                console.log('setupEventListeners - clic sur bouton:', this.textContent, 'data-content:', content);
+                // Mettre à jour directement le store
+                setResponsibleForFilter(content);
+            });
         });
-    });
+    }
     
     // Gestion du sélecteur de travailleur
     const workerSelect = document.getElementById('workerSelect');
@@ -146,18 +165,21 @@ function setupEventListeners() {
     }
 }
 
-function selectContent(content, buttonElement = null) {
-    console.log(`Sélection du contenu: ${content}`);
-    selectedContent = content;
+
+
+/**
+ * Restaurer l'état des boutons de filtre depuis le store
+ */
+function restoreFilterButtonsState() {
+    const currentFilter = getResponsibleForFilter();
+    console.log('restoreFilterButtonsState - filtre actuel:', currentFilter);
     
-    // Mettre à jour l'état visuel des boutons
-    document.querySelectorAll('.btn-group-container .btn').forEach(btn => btn.classList.remove('active'));
-    if (buttonElement) buttonElement.classList.add('active');
-    
-    // Si un travailleur est sélectionné, recharger ses données
-    if (selectedWorkerId) {
-        loadWorkerData(selectedWorkerId, getSelectedDate());
+    if (!currentFilter) {
+        // Si aucun filtre n'est défini dans le store, utiliser 'responsibilities' par défaut
+        console.log('restoreFilterButtonsState - aucun filtre défini, utilisation de la valeur par défaut');
+        setResponsibleForFilter('responsibilities');
     }
+    // Note: L'état visuel des boutons sera mis à jour automatiquement par l'écouteur du store
 }
 
 async function loadWorkersForDate(date) {
@@ -177,7 +199,7 @@ async function loadWorkersForDate(date) {
         
         // Construction de l'URL d'API
         console.log('Appel API get_workers avec date=', dateStr);
-        const url = `../../api/responsibilities/worker-view/worker-view.php?action=get_workers&date=${dateStr}`;
+        const url = `../../api/controllers/responsibilities/worker-controller.php?action=get_workers&date=${dateStr}`;
         
         // Appel API
         try {
@@ -319,7 +341,7 @@ async function loadWorkerActivitiesResponsible(userId, date) {
     console.log(`Chargement des activités en responsabilité pour ${userId} à la date ${dateStr}`);
     
     try {
-        const url = `../../api/responsibilities/worker-view/worker-view.php?action=get_worker_activities&user_id=${userId}&date=${dateStr}&is_responsible=true`;
+        const url = `../../api/controllers/responsibilities/worker-controller.php?action=get_worker_activities&user_id=${userId}&date=${dateStr}&is_responsible=true`;
         const data = await apiRequest(url);
         
         if (data && data.data && Array.isArray(data.data.activities)) {
@@ -343,7 +365,7 @@ async function loadWorkerActivitiesNotResponsible(userId, date) {
     console.log(`Chargement des activités non-responsable pour ${userId} à la date ${dateStr}`);
     
     try {
-        const url = `../../api/responsibilities/worker-view/worker-view.php?action=get_worker_activities&user_id=${userId}&date=${dateStr}&is_responsible=false`;
+        const url = `../../api/controllers/responsibilities/worker-controller.php?action=get_worker_activities&user_id=${userId}&date=${dateStr}&is_responsible=false`;
         const data = await apiRequest(url);
         
         if (data && data.data && Array.isArray(data.data.activities)) {
@@ -368,16 +390,34 @@ function displaySelectedContent() {
         return;
     }
     
-    console.log(`Affichage du contenu pour ${selectedWorkerId} à la date ${getSelectedDate()}, type: ${selectedContent}`);
+    // S'assurer qu'un filtre est défini
+    const currentFilter = getResponsibleForFilter();
+    if (!currentFilter) {
+        console.log('displaySelectedContent - aucun filtre défini, définition par défaut: responsibilities');
+        setResponsibleForFilter('responsibilities');
+        // Mettre à jour l'état visuel des boutons (limités à la vue worker)
+        const workerButtonsContainer = container.querySelector('.btn-group-container');
+        if (workerButtonsContainer) {
+            workerButtonsContainer.querySelectorAll('.btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.content === 'responsibilities') {
+                    btn.classList.add('active');
+                    console.log('displaySelectedContent - bouton par défaut activé: responsibilities');
+                }
+            });
+        }
+    }
+    
+    console.log(`Affichage du contenu pour ${selectedWorkerId} à la date ${getSelectedDate()}, type: ${getResponsibleForFilter()}`);
     
     const dateStr = formatDateForAPI(getSelectedDate());
-    const cacheKey = `${selectedWorkerId}-${getSelectedDate()}-${selectedContent}`;
+    const cacheKey = `${selectedWorkerId}-${getSelectedDate()}-${getResponsibleForFilter()}`;
     
     // Récupérer les données du cache
     let activitiesData = [];
-    if (selectedContent === 'responsibilities') {
+    if (getResponsibleForFilter() === 'responsibilities') {
         activitiesData = workersData[`${selectedWorkerId}-${dateStr}-responsible`] || [];
-    } else if (selectedContent === 'tasks') {
+    } else if (getResponsibleForFilter() === 'tasks') {
         activitiesData = workersData[`${selectedWorkerId}-${dateStr}-not_responsible`] || [];
     }
     
@@ -400,7 +440,8 @@ function displaySelectedContent() {
         
         // Créer les cartes d'activités avec les options spécifiques à la vue travailleur
         const workerOptions = {
-            selectedWorkerId, isGlobalView: false
+            selectedWorkerId, 
+            isGlobalView: false
         };
         
         activitiesData.forEach(item => {
@@ -421,7 +462,8 @@ function displaySelectedContent() {
         const emptyState = document.getElementById('workerEmptyState');
         const emptyTitle = emptyState.querySelector('h3');
         
-        const contentType = selectedContent === 'responsibilities' ? 'responsabilité' : 'tâche';
+        const currentFilter = getResponsibleForFilter() || 'responsibilities';
+        const contentType = currentFilter === 'responsibilities' ? 'responsabilité' : 'tâche';
         emptyTitle.textContent = `Aucune ${contentType} trouvée pour ce travailleur à cette période.`;
         
         emptyState.style.display = 'block';
@@ -435,26 +477,114 @@ function clearWorkerActivities() {
 }
 
 /**
- * Restaurer l'état des cartes d'activité dépliées depuis le store
+ * Restaurer l'état des cartes d'activité dépliées depuis le store worker
  */
 function restoreExpandedActivityCards() {
     console.log('=== RESTAURATION DES CARTES DÉPLIÉES WORKER-VIEW ===');
-    console.log('État global actuel - expandedActivityCard:', getExpandedActivityCard());
+    console.log('État worker actuel - expandedActivityCard:', getWorkerExpandedActivityCard());
     
-    const expandedActivityId = getExpandedActivityCard();
+    const expandedActivityId = getWorkerExpandedActivityCard();
     if (expandedActivityId) {
-        const activityCard = document.querySelector(`[data-card-id="${expandedActivityId}"]`);
+        const activityCard = document.querySelector(`[data-card-id="activity-${expandedActivityId}"]`);
         if (activityCard) {
-            console.log('Carte d\'activité trouvée, restauration...');
-            const detailedContent = activityCard.querySelector('.detailed-content');
-            if (detailedContent) {
-                detailedContent.style.display = 'block';
+            console.log('Carte d\'activité worker trouvée, restauration...');
+            const body = activityCard.querySelector('.content-card-body');
+            if (body) {
+                body.classList.remove('content-card-body--collapsed');
+                body.classList.add('content-card-body--expanded');
                 activityCard.classList.add('expanded');
             }
         } else {
-            console.log('Carte d\'activité non trouvée dans le DOM - pas de restauration');
+            console.log('Carte d\'activité worker non trouvée dans le DOM - pas de restauration');
         }
     }
+}
+
+/**
+ * Configurer l'écouteur de changement de filtre responsibleForFilter
+ */
+function setupResponsibleForFilterChangeListener() {
+    // Supprimer l'ancien écouteur s'il existe
+    if (responsibleForFilterChangeListener) {
+        removeEventListener('responsibleForFilter', responsibleForFilterChangeListener);
+    }
+    
+    // Créer le nouvel écouteur
+    responsibleForFilterChangeListener = (newFilter) => {
+        console.log('Vue worker - Changement de filtre détecté:', newFilter);
+        if (newFilter) {
+            // Mettre à jour l'état visuel des boutons
+            const workerButtonsContainer = container.querySelector('.btn-group-container');
+            if (workerButtonsContainer) {
+                workerButtonsContainer.querySelectorAll('.btn').forEach(btn => {
+                    btn.classList.remove('active');
+                    if (btn.dataset.content === newFilter) {
+                        btn.classList.add('active');
+                        console.log('Bouton activé via écouteur store:', btn.dataset.content);
+                    }
+                });
+            }
+            
+            // Si un travailleur est sélectionné, recharger ses données
+            if (selectedWorkerId) {
+                loadWorkerData(selectedWorkerId, getSelectedDate());
+            }
+        }
+    };
+    
+    // Ajouter l'écouteur
+    addEventListener('responsibleForFilter', responsibleForFilterChangeListener);
+}
+
+/**
+ * Configurer l'écouteur de changement de carte dépliée worker
+ */
+function setupWorkerExpandedActivityCardChangeListener() {
+    // Supprimer l'ancien écouteur s'il existe
+    if (workerExpandedActivityCardChangeListener) {
+        removeEventListener('workerExpandedActivityCard', workerExpandedActivityCardChangeListener);
+    }
+    
+    // Créer le nouvel écouteur
+    workerExpandedActivityCardChangeListener = (cardId) => {
+        console.log('Vue worker - Changement de carte dépliée worker détecté:', cardId);
+        
+        // Fermer toutes les cartes de la vue worker d'abord
+        const workerContainer = document.getElementById('workerActivitiesContainer');
+        if (workerContainer) {
+            const allWorkerCards = workerContainer.querySelectorAll('.activity-card');
+            allWorkerCards.forEach(card => {
+                const body = card.querySelector('.content-card-body');
+                if (body) {
+                    body.classList.remove('content-card-body--expanded');
+                    body.classList.add('content-card-body--collapsed');
+                    card.classList.remove('expanded');
+                }
+            });
+        }
+        
+        // Déplier la carte spécifiée si elle existe dans la vue worker
+        if (cardId) {
+            const workerContainer = document.getElementById('workerActivitiesContainer');
+            if (workerContainer) {
+                const targetCard = workerContainer.querySelector(`[data-card-id="activity-${cardId}"]`);
+                if (targetCard) {
+                    const body = targetCard.querySelector('.content-card-body');
+                    if (body) {
+                        body.classList.remove('content-card-body--collapsed');
+                        body.classList.add('content-card-body--expanded');
+                        targetCard.classList.add('expanded');
+                        console.log('Carte worker dépliée avec succès:', cardId);
+                    }
+                } else {
+                    console.log('Carte worker non trouvée dans le conteneur worker:', cardId);
+                }
+            }
+        }
+    };
+    
+    // Ajouter l'écouteur
+    addEventListener('workerExpandedActivityCard', workerExpandedActivityCardChangeListener);
 }
 
 /**
@@ -486,3 +616,4 @@ function setupSelectedDateChangeListener() {
     // Ajouter l'écouteur
     addEventListener('selectedDate', selectedDateChangeListener);
 }
+

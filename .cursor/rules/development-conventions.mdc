@@ -1,0 +1,105 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Conventions de Développement
+
+## Nommage et organisation
+
+### Fichiers et dossiers
+- **Frontend** : `kebab-case` pour les fichiers (ex: `activity-card.js`, `app-header.css`)
+- **Backend** : `kebab-case.php` pour les fichiers PHP (ex: `activity-controller.php`)
+- **Dossiers** : `kebab-case` pour les noms de dossiers
+- **Organisation** : Par domaine métier puis par couche technique
+
+### Code JavaScript
+- **Fonctions** : `camelCase` (ex: `formatActivityName`, `createResponsibleBadge`)
+- **Classes** : `PascalCase` (ex: `DateSelector`, `ActivityCard`)
+- **Constantes** : `UPPER_SNAKE_CASE` (ex: `API_ENDPOINTS`, `DEFAULT_DATE`)
+- **Variables** : `camelCase` (ex: `selectedWorker`, `activityData`)
+
+### Code PHP
+- **Classes** : `PascalCase` (ex: `ActivityController`, `BaseRepository`)
+- **Méthodes** : `camelCase` (ex: `getActivities`, `createNewVersion`)
+- **Variables** : `camelCase` (ex: `$activityData`, `$selectedWorker`)
+- **Constantes** : `UPPER_SNAKE_CASE` (ex: `DEFAULT_LIMIT`, `API_VERSION`)
+
+### CSS
+- **Classes** : `kebab-case` (ex: `activity-card`, `user-info`)
+- **Variables** : `--kebab-case` (ex: `--primary-color`, `--spacing-large`)
+- **Media queries** : Breakpoints 768px (tablet) et 480px (mobile)
+
+## Architecture et patterns
+
+### Frontend
+- **Modules ES6** : Utilisation d'imports/exports pour la modularité
+- **Composants** : Un fichier par composant avec responsabilité unique
+- **Store centralisé** : Gestion d'état via [modules/store/](mdc:modules/store/)
+- **Cache** : Optimisation des performances via [modules/cache/](mdc:modules/cache/)
+
+### Backend
+- **MVC** : Séparation Contrôleurs/Services/Repositories
+- **Héritage** : Repositories héritent de `BaseRepository`
+- **Authentification** : Système centralisé via [api/common/auth.php](mdc:api/common/auth.php)
+- **Versioning** : Système de versioning des données
+
+## Responsive Design
+
+### Breakpoints
+- **Desktop** : > 768px - Affichage complet
+- **Tablet** : ≤ 768px - Adaptation des layouts
+- **Mobile** : ≤ 480px - Simplification de l'interface
+
+### Approche
+- **Mobile-first** : Développement en commençant par mobile
+- **Flexbox/Grid** : Layouts modernes et adaptatifs
+- **Images** : Responsive avec `max-width: 100%`
+
+## Performance et optimisation
+
+### Frontend
+- **Cache** : Utilisation du cache pour les données API
+- **Lazy loading** : Chargement à la demande des composants
+- **Minification** : CSS et JS minifiés en production
+
+### Backend
+- **Requêtes optimisées** : Indexation et requêtes SQL efficaces
+- **Cache** : Mise en cache des données fréquemment utilisées
+- **Versioning** : Gestion efficace des versions de données
+
+## Sécurité
+
+### Authentification
+- **Nextcloud** : Intégration avec le système d'auth Nextcloud
+- **Sessions** : Gestion sécurisée des sessions utilisateur
+- **Validation** : Validation côté serveur de toutes les données
+
+### Données
+- **SQL Injection** : Utilisation de requêtes préparées
+- **XSS** : Échappement des données utilisateur
+- **CSRF** : Protection contre les attaques CSRF
+
+## Tests et qualité
+
+### Tests
+- **Fonctionnels** : Tests des fonctionnalités principales
+- **Responsive** : Tests sur différents appareils
+- **Performance** : Tests de charge et de performance
+
+### Code quality
+- **Documentation** : Commentaires JSDoc pour les fonctions complexes
+- **Linting** : Respect des standards de codage
+- **Refactoring** : Amélioration continue du code
+
+## Déploiement
+
+### Structure
+- **Fichiers statiques** : CSS, JS, images dans les dossiers appropriés
+- **Configuration** : Fichiers de config séparés par environnement
+- **Documentation** : README.md dans chaque dossier important
+
+### Environnements
+- **Développement** : Configuration locale avec debug activé
+- **Production** : Optimisations activées, cache configuré
+- **Staging** : Environnement de test avant production

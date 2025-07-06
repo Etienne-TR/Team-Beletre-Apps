@@ -10,7 +10,7 @@ import {
     initializeCommonElements
 } from './services/shared.js';
 import { globalStore } from '/modules/store/store.js';
-import { getSelectedActivityType } from '/modules/store/responsibilities.js';
+import { getSelectedActivityType, getResponsibleForFilter } from '/modules/store/responsibilities.js';
 import { createAppHeader } from '/modules/components/app-header.js';
 import { updateUserInfo } from '/modules/components/user-info.js';
 import { 
@@ -205,6 +205,41 @@ function syncTypeButtonsState() {
                 }
             });
         }
+    }
+    
+    // Restaurer l'état des boutons de filtre de la vue worker
+    const workerViewContainer = document.getElementById('worker-view-container');
+    console.log('syncTypeButtonsState - workerViewContainer trouvé:', !!workerViewContainer);
+    
+    if (workerViewContainer) {
+        const workerButtonsContainer = workerViewContainer.querySelector('.btn-group-container');
+        console.log('syncTypeButtonsState - workerButtonsContainer trouvé:', !!workerButtonsContainer);
+        
+        if (workerButtonsContainer) {
+            const buttons = workerButtonsContainer.querySelectorAll('.btn[data-content]');
+            console.log('syncTypeButtonsState - nombre de boutons trouvés:', buttons.length);
+            
+            const currentFilter = getResponsibleForFilter();
+            console.log('syncTypeButtonsState - filtre actuel dans le store:', currentFilter);
+            
+            // Ne restaurer que si un filtre est défini dans le store
+            if (currentFilter) {
+                buttons.forEach(btn => {
+                    console.log('syncTypeButtonsState - bouton:', btn.dataset.content, 'actif:', btn.classList.contains('active'));
+                    btn.classList.remove('active');
+                    if (btn.dataset.content === currentFilter) {
+                        btn.classList.add('active');
+                        console.log('syncTypeButtonsState - bouton activé:', btn.dataset.content);
+                    }
+                });
+            } else {
+                console.log('syncTypeButtonsState - aucun filtre défini dans le store, pas de restauration');
+            }
+        } else {
+            console.log('syncTypeButtonsState - workerButtonsContainer non trouvé');
+        }
+    } else {
+        console.log('syncTypeButtonsState - workerViewContainer non trouvé');
     }
 }
 

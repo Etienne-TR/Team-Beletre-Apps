@@ -122,7 +122,10 @@ function setupActivityTypeChangeListener() {
     
     // Créer le nouvel écouteur
     activityTypeChangeListener = (newType) => {
-        console.log('Vue éditeur - Changement de type détecté:', newType);
+        console.log('=== VUE ÉDITEUR - CHANGEMENT DE TYPE DÉTECTÉ ===');
+        console.log('Nouveau type reçu:', newType);
+        console.log('Type du nouveau type:', typeof newType);
+        
         if (newType) {
             // Conserver l'état de la carte dépliée (ne pas l'effacer)
             const currentExpandedCard = getExpandedActivityCard();
@@ -130,24 +133,45 @@ function setupActivityTypeChangeListener() {
             
             // Mettre à jour les boutons
             const typeButtonsContainer = document.getElementById('type-buttons-container');
+            console.log('Conteneur des boutons trouvé:', !!typeButtonsContainer);
+            
             if (typeButtonsContainer) {
-                typeButtonsContainer.querySelectorAll('.btn[data-type]').forEach(btn => {
+                const buttons = typeButtonsContainer.querySelectorAll('.btn[data-type]');
+                console.log('Nombre de boutons trouvés:', buttons.length);
+                
+                buttons.forEach((btn, index) => {
+                    console.log(`Bouton ${index}:`, {
+                        dataset: btn.dataset,
+                        textContent: btn.textContent,
+                        className: btn.className
+                    });
+                    
                     btn.classList.remove('active');
                     if (btn.dataset.type === newType) {
+                        console.log(`Activation du bouton pour le type: ${newType}`);
                         btn.classList.add('active');
                     }
                 });
+                
+                console.log('Mise à jour des boutons terminée');
+            } else {
+                console.warn('Conteneur des boutons non trouvé');
             }
+            
             // Recharger les activités
+            console.log('Rechargement des activités...');
             loadActivities().then(() => {
                 displayActivities();
                 // La restauration automatique se fait dans displayActivities() via restoreExpandedCards()
             });
+        } else {
+            console.warn('Nouveau type est null ou undefined');
         }
     };
     
     // Ajouter l'écouteur
     addEventListener('selectedActivityType', activityTypeChangeListener);
+    console.log('Écouteur de changement de type configuré pour la vue éditeur');
 }
 
 /**
@@ -427,13 +451,43 @@ async function loadActivityTypes() {
     console.log('=== DÉBUT CHARGEMENT DES TYPES ===');
     
     try {
-        // Utiliser l'API activities.php pour récupérer les types d'activités
-        const url = '../../api/responsibilities/common/activities.php?action=get_activity_types';
+        // Utiliser l'API global-controller.php pour récupérer les types d'activités (même que global-view)
+        const url = 'controllers/responsibilities/global-controller.php?action=get_activity_types';
         console.log('Appel API avec URL:', url);
         
-        const data = await apiRequest(url);
+        console.log('Envoi de la requête API...');
+        console.log('URL complète qui sera utilisée: /api/' + url);
         
-        console.log('Réponse API des types:', data);
+        console.log('Appel de apiRequest...');
+        const data = await apiRequest(url);
+        console.log('apiRequest terminé, data reçue:', !!data);
+        console.log('Requête API terminée avec succès');
+        
+        console.log('=== RÉPONSE API BRUTE ===');
+        console.log('Type de data:', typeof data);
+        console.log('Data complète:', data);
+        console.log('Data JSON stringifié:', JSON.stringify(data, null, 2));
+        
+        // Vérifier la structure de la réponse
+        console.log('=== ANALYSE DE LA STRUCTURE ===');
+        console.log('data existe:', !!data);
+        console.log('data.data existe:', !!(data && data.data));
+        console.log('data.data.activity_types existe:', !!(data && data.data && data.data.activity_types));
+        
+        if (data && data.data) {
+            console.log('Clés disponibles dans data.data:', Object.keys(data.data));
+            if (data.data.activity_types) {
+                console.log('Type de activity_types:', typeof data.data.activity_types);
+                console.log('activity_types est un array:', Array.isArray(data.data.activity_types));
+                console.log('Nombre d\'éléments dans activity_types:', data.data.activity_types.length);
+                
+                // Afficher le premier élément pour voir sa structure
+                if (data.data.activity_types.length > 0) {
+                    console.log('Premier élément de activity_types:', data.data.activity_types[0]);
+                    console.log('Clés du premier élément:', Object.keys(data.data.activity_types[0]));
+                }
+            }
+        }
         
         // Vérifier si la réponse contient les données attendues
         if (!data || !data.data || !data.data.activity_types) {
@@ -442,27 +496,47 @@ async function loadActivityTypes() {
         }
         
         // Récupérer les types d'activités de la réponse
-        availableTypes = data.data.activity_types.map(type => ({
-            type_name: type.name,
-            type_description: type.description,
-            type_emoji: '',
-            entry: type.entry
-        }));
+        console.log('=== MAPPING DES TYPES ===');
+        console.log('Données brutes à mapper:', data.data.activity_types);
         
+        availableTypes = data.data.activity_types.map((type, index) => {
+            console.log(`Mapping type ${index}:`, type);
+            console.log(`  - type.name: ${type.name} (type: ${typeof type.name})`);
+            console.log(`  - type.description: ${type.description} (type: ${typeof type.description})`);
+            console.log(`  - type.entry: ${type.entry} (type: ${typeof type.entry})`);
+            
+            const mappedType = {
+                type_name: type.name,
+                type_description: type.description,
+                type_emoji: '',
+                entry: type.entry
+            };
+            
+            console.log(`Type mappé ${index}:`, mappedType);
+            return mappedType;
+        });
+        
+        console.log('=== RÉSULTAT FINAL ===');
         console.log('Types d\'activités chargés:', availableTypes);
+        console.log('Nombre de types:', availableTypes.length);
         console.log('Appel de generateTypeButtons avec', availableTypes.length, 'types');
         
         // Générer les boutons immédiatement sans délai
         generateTypeButtons();
         
     } catch (error) {
-        console.error('Erreur lors du chargement des types d\'activités:', error);
+        console.error('=== ERREUR LORS DU CHARGEMENT DES TYPES ===');
+        console.error('Message d\'erreur:', error.message);
+        console.error('Stack trace:', error.stack);
+        console.error('Erreur complète:', error);
         
         // Afficher un message d'erreur à l'utilisateur
         showMessage('Erreur lors du chargement des types d\'activités.', 'error');
     }
     
     console.log('=== FIN CHARGEMENT DES TYPES ===');
+    console.log('availableTypes à la fin:', availableTypes);
+    console.log('Nombre de types disponibles:', availableTypes.length);
 }
 
 /**
@@ -471,7 +545,8 @@ async function loadActivityTypes() {
 async function loadWorkers() {
     try {
         // Utiliser l'API appropriée pour récupérer les utilisateurs
-        const url = '../../api/responsibilities/users.php?action=list';
+        // TODO: Créer le fichier users.php ou utiliser une autre API
+        // const url = '../../api/responsibilities/users.php?action=list';
         const data = await apiRequest(url);
         
         if (data.success && data.data) {
@@ -583,48 +658,71 @@ function generateTypeButtons() {
     // Sélectionner le conteneur des boutons
     const container = document.getElementById('type-buttons-container') || document.querySelector('.type-buttons');
     
+    console.log('Conteneur trouvé:', !!container);
+    console.log('ID du conteneur:', container ? container.id : 'N/A');
+    console.log('Classes du conteneur:', container ? container.className : 'N/A');
+    
     if (!container) {
         console.error('Conteneur des boutons de type non trouvé');
+        console.log('Recherche de conteneurs alternatifs...');
+        console.log('type-buttons-container:', document.getElementById('type-buttons-container'));
+        console.log('.type-buttons:', document.querySelector('.type-buttons'));
+        console.log('.btn-group-container:', document.querySelector('.btn-group-container'));
         return;
     }
     
     // Vider le conteneur
     container.innerHTML = '';
+    console.log('Conteneur vidé');
+    
+    console.log('=== CRÉATION DES BOUTONS ===');
+    console.log('availableTypes:', availableTypes);
+    console.log('Nombre de types disponibles:', availableTypes.length);
     
     // Générer les boutons pour chaque type d'activité
-    availableTypes.forEach(type => {
+    availableTypes.forEach((type, index) => {
+        console.log(`Création du bouton ${index} pour le type:`, type);
+        console.log(`  - type_name: ${type.type_name}`);
+        console.log(`  - type_name formaté: ${formatTypeName(type.type_name)}`);
+        
         const button = document.createElement('button');
         button.className = 'btn';
         button.textContent = formatTypeName(type.type_name);
         button.dataset.type = type.type_name;
         
+        console.log(`Bouton créé:`, {
+            textContent: button.textContent,
+            dataset: button.dataset,
+            className: button.className
+        });
+        
         button.addEventListener('click', async function() {
+            console.log(`Clic sur le bouton pour le type: ${type.type_name}`);
             await selectType(type.type_name, this);
         });
         
         container.appendChild(button);
+        console.log(`Bouton ${index} ajouté au conteneur`);
     });
     
-    // Sélectionner le premier bouton par défaut si aucun type n'est sélectionné
+    console.log('=== ÉTAT FINAL DU CONTENEUR ===');
+    console.log('Nombre d\'enfants dans le conteneur:', container.children.length);
+    console.log('HTML du conteneur:', container.innerHTML);
+    
+    // Note: L'état visuel des boutons sera mis à jour automatiquement par l'écouteur du store
+    // Si aucun type n'est sélectionné, sélectionner le premier par défaut
     if (availableTypes.length > 0) {
         const currentSelectedType = getSelectedActivityType();
-        let buttonToActivate = null;
+        console.log('Type actuellement sélectionné:', currentSelectedType);
         
-        if (currentSelectedType) {
-            // Si un type est déjà sélectionné dans le store, l'utiliser
-            buttonToActivate = container.querySelector(`.btn[data-type="${currentSelectedType}"]`);
-        }
-        
-        if (!buttonToActivate) {
-            // Sinon, sélectionner le premier bouton par défaut
-            buttonToActivate = container.querySelector('.btn[data-type]');
-            if (buttonToActivate) {
-                setSelectedActivityType(buttonToActivate.dataset.type);
+        if (!currentSelectedType) {
+            // Sélectionner le premier type par défaut
+            const firstButton = container.querySelector('.btn[data-type]');
+            console.log('Premier bouton trouvé:', !!firstButton);
+            if (firstButton) {
+                console.log('Sélection automatique du premier type:', firstButton.dataset.type);
+                setSelectedActivityType(firstButton.dataset.type);
             }
-        }
-        
-        if (buttonToActivate) {
-            buttonToActivate.classList.add('active');
         }
     }
     
@@ -637,45 +735,41 @@ function generateTypeButtons() {
  * @param {HTMLElement} buttonElement - L'élément bouton cliqué (optionnel)
  */
 async function selectType(type, buttonElement = null) {
-    console.log('Sélection du type:', type);
+    console.log('=== SÉLECTION DE TYPE ===');
+    console.log('Type à sélectionner:', type);
+    console.log('Type du paramètre:', typeof type);
+    console.log('Bouton cliqué:', !!buttonElement);
     
-    // Mettre à jour l'état global (cela déclenchera automatiquement les écouteurs d'événements)
-    setSelectedActivityType(type);
-    
-    // Mettre à jour les styles de tous les boutons DANS CETTE VUE SEULEMENT
-    const typeButtonsContainer = document.getElementById('type-buttons-container');
-    if (typeButtonsContainer) {
-        typeButtonsContainer.querySelectorAll('.btn[data-type]').forEach(btn => {
-            btn.classList.remove('active');
+    if (buttonElement) {
+        console.log('Propriétés du bouton:', {
+            textContent: buttonElement.textContent,
+            dataset: buttonElement.dataset,
+            className: buttonElement.className
         });
     }
     
-    // Si un bouton est fourni, l'activer
-    if (buttonElement) {
-        buttonElement.classList.add('active');
-    } else {
-        // Sinon, trouver le bouton correspondant au type et l'activer DANS CETTE VUE SEULEMENT
-        const typeButtonsContainer = document.getElementById('type-buttons-container');
-        if (typeButtonsContainer) {
-            const button = typeButtonsContainer.querySelector(`.btn[data-type="${type}"]`);
-            if (button) {
-                button.classList.add('active');
-            }
-        }
-    }
+    // Mettre à jour uniquement le store
+    console.log('Mise à jour du store avec le type:', type);
+    setSelectedActivityType(type);
     
-    // Charger les activités pour ce type et mettre à jour l'affichage
-    await loadActivities();
-    displayActivities();
+    console.log('Sélection de type terminée');
+    
+    // Note: L'état visuel des boutons sera mis à jour automatiquement par l'écouteur du store
+    // Note: loadActivities() et displayActivities() seront appelés automatiquement par l'écouteur du store
 }
 
 /**
  * Charger les activités pour le type sélectionné
  */
 async function loadActivities() {
+    console.log('=== DÉBUT CHARGEMENT DES ACTIVITÉS ===');
+    
     try {
         const selectedDate = getSelectedDate() || formatDateForAPI(new Date());
         const selectedType = getSelectedActivityType();
+        
+        console.log('Date sélectionnée:', selectedDate);
+        console.log('Type sélectionné:', selectedType);
         
         if (!selectedType) {
             console.warn('Aucun type d\'activité sélectionné');
@@ -683,25 +777,45 @@ async function loadActivities() {
             return [];
         }
         
-        const url = `../../api/responsibilities/editor/editor.php?action=get_activities&type=${selectedType}&date=${selectedDate}`;
+        const url = `controllers/responsibilities/activity-controller.php?action=get_activities&type=${selectedType}&date=${selectedDate}`;
+        console.log('URL de la requête:', url);
+        console.log('URL complète qui sera utilisée: /api/' + url);
         
+        console.log('Envoi de la requête API pour les activités...');
         const data = await apiRequest(url);
+        console.log('Requête API terminée, data reçue:', !!data);
+        
+        console.log('=== RÉPONSE API ACTIVITÉS ===');
+        console.log('Type de data:', typeof data);
+        console.log('Data complète:', data);
+        console.log('Data JSON stringifié:', JSON.stringify(data, null, 2));
         
         if (data && data.data && data.data.activities) {
+            console.log('Activités trouvées:', data.data.activities.length);
             activities = data.data.activities;
             return activities;
         } else {
             console.error('Format de réponse invalide:', data);
+            console.log('Structure de data:', {
+                'data existe': !!data,
+                'data.data existe': !!(data && data.data),
+                'data.data.activities existe': !!(data && data.data && data.data.activities)
+            });
             showMessage('Erreur lors du chargement des activités', 'error');
             activities = [];
             return [];
         }
     } catch (error) {
-        console.error('Erreur lors du chargement des activités:', error);
+        console.error('=== ERREUR LORS DU CHARGEMENT DES ACTIVITÉS ===');
+        console.error('Message d\'erreur:', error.message);
+        console.error('Stack trace:', error.stack);
+        console.error('Erreur complète:', error);
         showMessage('Erreur lors du chargement des activités', 'error');
         activities = [];
         return [];
     }
+    
+    console.log('=== FIN CHARGEMENT DES ACTIVITÉS ===');
 }
 
 /**
@@ -719,7 +833,7 @@ function displayActivities(activitiesToShow = activities) {
     // Afficher les activités existantes en premier
     if (activitiesToShow && activitiesToShow.length > 0) {
         activitiesToShow.forEach((activity, index) => {
-            const card = createActivityCard(activity);
+            const card = createActivityCard(activity, { isGlobalView: true });
             container.appendChild(card);
         });
     } else {
@@ -779,7 +893,7 @@ function createNewActivityCard() {
 /**
  * Créer une carte d'activité pour la grille
  */
-function createActivityCard(activity) {
+function createActivityCard(activity, options = {}) {
     const card = document.createElement('div');
     card.className = 'content-card';
     card.dataset.activityId = activity.id;
@@ -1011,7 +1125,7 @@ async function loadResponsiblesData(card, activity, container) {
         }
         
         const dateStr = getSelectedDate();
-        const url = `../../api/responsibilities/editor/editor.php?action=get_responsible_for&activity=${activity.id}&date=${dateStr}`;
+        const url = `../../api/controllers/responsibilities/activity-controller.php?action=get_responsible_for&activity=${activity.id}&date=${dateStr}`;
         
         console.log('loadResponsiblesData - URL de la requête:', url);
         console.log('loadResponsiblesData - Envoi de la requête HTTP...');

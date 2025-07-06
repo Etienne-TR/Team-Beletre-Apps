@@ -64,7 +64,8 @@ const initialState = {
     expandedActivityCard: null,
     individual: {
         selectedWorker: null,
-        responsibleForFilter: null
+        responsibleForFilter: null,
+        expandedActivityCard: null
     },
     editor: {
         expandedTaskCard: null
@@ -190,6 +191,7 @@ export function getSelectedWorker() {
  */
 export function setResponsibleForFilter(filter) {
     globalStore.setState('responsibilities.individual', { responsibleForFilter: filter });
+    triggerEvent('responsibleForFilter', filter);
 }
 
 /**
@@ -198,4 +200,29 @@ export function setResponsibleForFilter(filter) {
  */
 export function getResponsibleForFilter() {
     return globalStore.getState('responsibilities.individual.responsibleForFilter');
+}
+
+/**
+ * Définit la carte d'activité dépliée dans la vue worker
+ * @param {string} cardId - ID de la carte d'activité dépliée
+ */
+export function setWorkerExpandedActivityCard(cardId) {
+    globalStore.setState('responsibilities.individual', { expandedActivityCard: cardId });
+    triggerEvent('workerExpandedActivityCard', cardId);
+}
+
+/**
+ * Récupère l'ID de la carte d'activité dépliée dans la vue worker
+ * @returns {string|null} ID de la carte d'activité dépliée ou null
+ */
+export function getWorkerExpandedActivityCard() {
+    return globalStore.getState('responsibilities.individual.expandedActivityCard');
+}
+
+/**
+ * Efface la carte d'activité dépliée dans la vue worker
+ */
+export function clearWorkerExpandedActivityCard() {
+    globalStore.setState('responsibilities.individual', { expandedActivityCard: null });
+    triggerEvent('workerExpandedActivityCard', null);
 } 

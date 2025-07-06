@@ -1,0 +1,54 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Architecture de l'API PHP
+
+## Structure refactorisée
+L'API suit une architecture avec séparation claire des responsabilités.
+
+### Contrôleurs ([api/controllers/](mdc:api/controllers))
+- **Point d'entrée HTTP** : Reçoivent les requêtes, valident les paramètres, retournent JSON
+- **Organisation** : Par domaine métier (ex: `responsibilities/`)
+- **Responsabilités** : Validation, orchestration, réponse HTTP
+
+### Services ([api/services/](mdc:api/services))
+- **Logique métier (application)** : Règles métier, transformations, orchestration
+- **Transactions** : Gestion des opérations complexes
+- **Organisation** : Par domaine métier (ex: `responsibilities/`)
+
+### Repositories ([api/repositories/](mdc:api/repositories))
+- **Accès aux données** : Requêtes SQL
+- **Héritage** : Héritent de [api/repositories/common/base-repository.php](mdc:api/repositories/common/base-repository.php) (CRUD, versionning)
+- **Organisation** : 
+  - [api/repositories/common/](mdc:api/repositories/common) - Repositories partagés
+  - [api/repositories/responsibilities/](mdc:api/repositories/responsibilities) - Spécialisés
+
+### Infrastructure commune ([api/common/](mdc:api/common))
+- **Authentification** : [api/common/auth.php](mdc:api/common/auth.php) - Système centralisé
+- **Base API** : [api/common/base-api.php](mdc:api/common/base-api.php) - Classe de base
+- **Base de données** : [api/common/database.php](mdc:api/common/database.php) - Connexion PDO
+
+### Utilitaires ([api/utils/](mdc:api/utils))
+- **Validation** : [api/utils/responsibilities/validator.php](mdc:api/utils/responsibilities/validator.php)
+- **Helpers** : [api/utils/responsibilities/helpers.php](mdc:api/utils/responsibilities/helpers.php)
+
+## Flux de données
+```
+HTTP Request → Contrôleur → Service → Repository → Database
+                ↓           ↓         ↓
+              Validation  Logique   Requêtes
+              Response    Métier    SQL
+```
+
+## Migration en cours
+- **Étape 1** : Renommage des fichiers existants pour éviter les conflits
+- **Étape 2** : Refactorisation vers la nouvelle architecture MVC
+- **Documentation** : [api/README.md](mdc:api/README.md) pour les détails de migration
+
+## Conventions
+- **Nommage** : `kebab-case.php` pour les fichiers
+- **Classes** : `PascalCase` pour les noms de classes
+- **Méthodes** : `camelCase` pour les méthodes
+- **Organisation** : Par domaine métier puis par couche

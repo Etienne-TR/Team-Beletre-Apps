@@ -1,4 +1,4 @@
-# Structure de l'API PHP
+# Structure de l'API PHP ractorisée
 
 ## Arborescence
 
@@ -6,38 +6,38 @@
 /api
 ├── /controllers
 │   └── /responsibilities
-│       ├── activity-controller.php       # CRUD activités + tâches
-│       ├── worker-controller.php         # Vue des travailleurs
-│       └── global-controller.php         # Vue synthèse + export
+│       ├── activity-controller.php   # CRUD activités + tâches
+│       ├── worker-controller.php     # Vue des travailleurs
+│       └── global-controller.php     # Vue synthèse + export
 │
 ├── /services
 │   └── /responsibilities
-│       ├── activity-service.php          # Logique activités/tâches
-│       ├── worker-service.php            # Logique travailleurs
-│       └── export-service.php            # Logique export CSV
+│       ├── activity-service.php      # Logique activités/tâches
+│       ├── worker-service.php        # Logique travailleurs
+│       └── export-service.php        # Logique export CSV
 │
 ├── /repositories
-│   ├── /common                           # ⭐ REPOSITORIES partagés
-│   │   ├── base-repository.php           # CRUD + versioning réutilisable
-│   │   └── audit-repository.php          # Logs d'audit réutilisables
+│   ├── /common                       # ⭐ REPOSITORIES partagés
+│   │   ├── base-repository.php       # CRUD + versioning réutilisable
+│   │   └── audit-repository.php      # Logs d'audit réutilisables
 │   └── /responsibilities
-│       ├── activity-repository.php       # Requêtes activités (hérite de Base)
-│       ├── user-repository.php           # Requêtes utilisateurs
-│       └── task-repository.php           # Requêtes tâches
+│       ├── activity-repository.php   # Requêtes activités
+│       ├── user-repository.php       # Requêtes utilisateurs
+│       └── task-repository.php       # Requêtes tâches
 │
 ├── /utils
 │   └── /responsibilities
-│       ├── helpers.php                   # Fonctions utilitaires existantes
-│       └── validator.php                 # Validation simple
+│       ├── helpers.php               # Fonctions utilitaires existantes
+│       └── validator.php             # Validation simple
 │
-├── /common                               # ⭐ INFRASTRUCTURE générale
-│   ├── base-api.php                      # Classe de base API existante
-│   └── database.php                      # Connexion PDO
+├── /common                           # ⭐ INFRASTRUCTURE générale
+│   ├── base-api.php                  # Classe de base API existante
+│   └── auth.php                      # ⭐ Auth transversale + Connexion PDO ?
 │
-└── .env                                  # Configuration
+└── .env                              # Configuration
 ```
 
-## Migration en 2 étapes
+## Migration en 2 étapes CORRIGÉE
 
 ### **ÉTAPE 1 : Renommage pour éviter les conflits**
 ```
@@ -54,7 +54,7 @@ responsibilities/
     └── global-view.php → global-view.php        # (garde le nom)
 ```
 
-### **ÉTAPE 2 : Structure refactorisée**  
+### **ÉTAPE 2 : Structure refactorisée (hiérarchie inversée)**  
 ```
 /api/
 ├── /controllers
@@ -80,9 +80,8 @@ responsibilities/
 │       ├── helpers.php               # Migration depuis common/helpers.php
 │       └── validator.php                 
 └── /common                           # ⭐ INFRASTRUCTURE générale
-    ├── auth.php                      # repositories-services-controllers !
     ├── base-api.php                  # Existant
-    └── database.php                  # Existant
+    └── auth.php                      # ⭐ Migration auth.php actuel
 ```
 
 ## Correspondance avec vos fichiers actuels CORRIGÉE
@@ -90,6 +89,10 @@ responsibilities/
 ## Correspondance avec vos fichiers actuels CORRIGÉE
 
 ### **Mapping exact de vos 6 fichiers vers 3 contrôleurs**
+
+#### **📁 Fichier d'authentification à migrer :**
+- `auth.php` → **common/auth.php**
+  - *Contient : Authentification transversale (login/logout/session) pour toutes les applications*
 
 #### **📁 Fichiers à fusionner dans activity-controller.php :**
 - `editor/activities.php` → `activities-crud.php` → **activity-controller.php**
@@ -117,15 +120,21 @@ responsibilities/
 
 ### **🔍 Détail des fusions**
 
-**activity-controller.php** va contenir :
+**common/auth.php** va contenir :
+- Votre fichier auth.php actuel (déplacé tel quel)
+- Endpoints d'authentification (POST login, GET session, DELETE logout)
+- Logique Nextcloud et gestion des sessions
+- Infrastructure d'authentification pour toutes les applications
+
+**controllers/responsibilities/activity-controller.php** va contenir :
 - Toutes les méthodes CRUD de `activities-crud.php` (create, update, delete, get, history)
 - Les méthodes de listing de `editor.php` (getActivities, getResponsibleFor, etc.)
 
-**global-controller.php** va contenir :
+**controllers/responsibilities/global-controller.php** va contenir :
 - Les méthodes de synthèse de `global-view.php` (getActivities, exportCSV) 
 - La méthode utilitaire de `activity-types.php` (getActivityTypes)
 
-**worker-controller.php** va contenir :
+**controllers/responsibilities/worker-controller.php** va contenir :
 - Toutes les méthodes de `worker-view.php` (getWorkers, getWorkerActivities, getWorkerTasks)
 
 **repositories/common/base-repository.php** va contenir :

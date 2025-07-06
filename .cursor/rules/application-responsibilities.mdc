@@ -1,0 +1,166 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Application Responsabilités
+
+## Vue d'ensemble
+L'application Responsabilités gère les responsabilités des membres de l'équipe pour différentes activités et tâches.
+
+## Architecture
+
+### Structure des fichiers
+- **Point d'entrée** : [apps/responsibilities/index.html](mdc:apps/responsibilities/index.html)
+- **Composants** : [apps/responsibilities/components/](mdc:apps/responsibilities/components/)
+- **Pages** : [apps/responsibilities/pages/](mdc:apps/responsibilities/pages/)
+- **Styles** : [apps/responsibilities/css/](mdc:apps/responsibilities/css/)
+- **JavaScript** : [apps/responsibilities/js/](mdc:apps/responsibilities/js/)
+- **Documentation** : [apps/responsibilities/README.md](mdc:apps/responsibilities/README.md)
+
+### Vues principales
+
+#### Vue Individuelle (Worker View)
+- **Page** : [apps/responsibilities/pages/worker-view/](mdc:apps/responsibilities/pages/worker-view/)
+- **Fonctionnalités** :
+  - Sélection du membre de l'équipe
+  - Filtrage des responsabilités (Toutes, Responsable, Autres)
+  - Affichage des activités avec cartes pliables
+  - Gestion des tâches par activité
+
+#### Vue Globale (Global View)
+- **Page** : [apps/responsibilities/pages/global-view/](mdc:apps/responsibilities/pages/global-view/)
+- **Fonctionnalités** :
+  - Sélection du type d'activité
+  - Vue d'ensemble de toutes les activités
+  - Badges des responsables par activité
+  - Navigation temporelle
+
+## Composants principaux
+
+### Activity Card
+- **Fichier** : [apps/responsibilities/components/activity-card.js](mdc:apps/responsibilities/components/activity-card.js)
+- **Fonctionnalités** :
+  - En-tête compact avec nom et badges des responsables
+  - Contenu détaillé pliable (description + tâches)
+  - Gestion d'état d'expansion/réduction
+  - Design responsive
+
+### Date Selector
+- **Module** : [modules/components/date-selector.js](mdc:modules/components/date-selector.js)
+- **Utilisation** : Navigation temporelle dans les deux vues
+
+### Responsible Badges
+- **Module** : [modules/components/badges.js](mdc:modules/components/badges.js)
+- **Fonction** : `createResponsibleBadge()` pour afficher les responsables
+
+## Intégration avec les modules
+
+### Store centralisé
+```javascript
+// État de l'application
+appStore.state.responsibilities.individual.selectedWorker
+appStore.state.responsibilities.global.selectedActivityType
+```
+
+### Cache global
+```javascript
+// Cache des données
+cache.api.workers.set('2025-01-15', workersData);
+cache.api.activities.set('123-2025-01-15', activitiesData);
+```
+
+### Client API
+```javascript
+// Appels API
+import { apiRequest } from '../../../shared/api-client.js';
+```
+
+## API utilisée
+
+### Endpoints
+- **Workers** : `/api/workers.php` - Liste des membres de l'équipe
+- **Activities** : `/api/activities.php` - Activités et responsabilités
+- **Tasks** : `/api/tasks.php` - Tâches par activité
+
+### Structure des données
+```javascript
+// Activité
+{
+    id: 123,
+    name: "Nom de l'activité",
+    type: "tech",
+    description: "Description...",
+    responsible: [...], // IDs des responsables
+    tasks: [...]        // IDs des tâches
+}
+
+// Responsable
+{
+    id: 456,
+    initials: "EF",
+    displayname: "Étienne"
+}
+
+// Tâche
+{
+    id: 789,
+    name: "Nom de la tâche",
+    activity_id: 123,
+    assignments: [...]  // Affectations
+}
+```
+
+## Flux de données
+
+### 1. Initialisation
+```javascript
+await loadWorkers();
+await loadActivities(date);
+await loadTasks(date);
+```
+
+### 2. Mise à jour des filtres
+```javascript
+appStore.commit('responsibilities/individual/setSelectedWorker', workerId);
+await loadActivitiesForWorker(workerId, date);
+```
+
+### 3. Navigation temporelle
+```javascript
+dateSelector.onDateChange(async (newDate) => {
+    await reloadAllData(newDate);
+});
+```
+
+## Styles CSS
+
+### Structure
+- **Global** : [shared/style.css](mdc:shared/style.css) - Styles de base
+- **En-tête** : [shared/app-header.css](mdc:shared/app-header.css) - Styles de l'en-tête
+- **Spécifiques** : [apps/responsibilities/css/](mdc:apps/responsibilities/css/) - Styles de l'application
+
+### Classes principales
+- `.activity-card` : Carte d'activité
+- `.badge` : Badges des responsables
+- `.date-selector` : Sélecteur de date
+- `.worker-filter` : Filtre de sélection de membre
+
+## Responsive Design
+- **Desktop** : Affichage complet avec toutes les informations
+- **Tablet** (≤768px) : Adaptation des badges et espacement
+- **Mobile** (≤480px) : Simplification de l'affichage
+
+## Développement
+
+### Ajouter une fonctionnalité
+1. Créer le composant dans [apps/responsibilities/components/](mdc:apps/responsibilities/components/)
+2. Ajouter la page dans [apps/responsibilities/pages/](mdc:apps/responsibilities/pages/) si nécessaire
+3. Mettre à jour le store si besoin d'état
+4. Tester sur desktop, tablet et mobile
+
+### Bonnes pratiques
+- **Composants réutilisables** : Créer des composants génériques
+- **Gestion d'état centralisée** : Utiliser le store
+- **Performance** : Utiliser le cache pour les données
+- **Accessibilité** : Respecter les standards WCAG
