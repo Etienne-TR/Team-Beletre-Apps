@@ -1,6 +1,6 @@
 // Test pour vérifier que toutes les pages utilisent bien l'état global selectedDate
-import { getSelectedDate, setSelectedDate } from './modules/store/responsibilities.js';
-import { globalStore } from './modules/store/store.js';
+import { getSelectedDate, setSelectedDate } from '/modules/store/responsibilities.js';
+import { globalStore } from '/modules/store/store.js';
 
 console.log('=== TEST D\'UTILISATION DE SELECTEDDATE PAR TOUTES LES PAGES ===');
 

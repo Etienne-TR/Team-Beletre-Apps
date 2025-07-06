@@ -16,7 +16,10 @@
 @import url('./content-cards.css');
 
 /* Import des styles d'onglets */
-@import url('./tabs.css');
+@import url('./content-tabs.css');
+
+/* Import des styles du sélecteur de date */
+@import url('./date-selector.css');
 
 
 /* Taille de police par défaut pour tout le contenu */
@@ -145,7 +148,7 @@ select {
     background: white;
     color: var(--text-color);
     border: var(--border-width-normal) solid var(--border-color);
-    padding: 0 1rem; /* Padding horizontal */
+    padding: var(--padding-vertical-tight) var(--padding-horizontal-tight); /* Padding serré */
     border-radius: 6px;
     
     height: var(--input-height); /* Utiliser la même hauteur que les champs de formulaire */
@@ -260,9 +263,9 @@ select {
 /* Styles pour les champs de texte */
 .input-style {
     width: 100%;
-    padding: 0 1rem;
+    padding: 0 var(--gap-medium);
     border: var(--border-width-fine) solid var(--border-color);
-    border-radius: 6px;
+    border-radius: var(--border-radius);
     font-family: var(--font-family);
     font-size: var(--font-size-normal);
     color: var(--text-color);
@@ -286,37 +289,19 @@ select {
     border-color: var(--hover-border-color-light);
 }
 
-/* Styles pour les boutons de formulaire */
-.btn-primary {
-    background-color: var(--primary-color);
-    color: white;
-    border: none;
-    border-radius: 6px;
-    height: var(--input-height); /* Utiliser la même hauteur que les champs de formulaire */
-    font-family: var(--font-family);
-    font-size: var(--font-size-normal);
-    font-weight: 500;
-    cursor: pointer;
-    transition: var(--transition-fast);
-    width: 100%;
-    box-sizing: border-box;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.btn-primary:hover {
-    background-color: var(--secondary-color);
-    transform: var(--transform-hover);
-    box-shadow: var(--shadow-btn-hover);
-}
-
-.btn-primary:active {
+/* Styles pour les états des boutons */
+.btn:active {
     transform: var(--transform-active);
     box-shadow: var(--shadow-btn-active);
 }
 
-.btn-primary:disabled {
+.btn.active {
+    background-color: var(--accent-color);
+    color: white;
+    border-color: var(--border-color);
+}
+
+.btn:disabled {
     background-color: var(--disabled-background);
     color: var(--disabled-color);
     cursor: var(--disabled-cursor);
@@ -336,7 +321,6 @@ select {
     }
     
     .input-style,
-    .btn-primary,
     .select-style {
         font-size: 0.9rem;
     }
@@ -355,9 +339,15 @@ select {
 .btn-group-container {
     display: flex;
     flex-direction: row;
-    gap: var(--gap-medium);
+    gap: var(--gap-tight);
     align-items: center;
     flex-wrap: wrap;
+}
+
+/* Spacer pour aligner les éléments à droite */
+.spacer {
+    flex: 1;
+    min-width: var(--gap-medium);
 }
 
 @media (max-width: 768px) {
@@ -366,4 +356,266 @@ select {
         gap: 0.4rem;
         align-items: stretch;
     }
+}
+
+/* Sélecteur de texte générique */
+.text-selector {
+    display: flex;
+    align-items: center;
+    min-width: 250px;
+}
+
+.text-selector .select-style {
+    width: 100%;
+    height: var(--input-height);
+    margin: 0;
+    box-sizing: border-box;
+}
+
+/* Styles pour les messages d'état */
+.empty-state-message {
+    font-family: var(--font-family-content);
+    font-size: var(--font-size-normal);
+    color: var(--text-muted);
+    text-align: center;
+    padding: var(--gap-large);
+    background-color: var(--background-lighter);
+    border-radius: var(--border-radius);
+    margin: var(--gap-medium) 0;
+}
+
+.loading-message {
+    font-family: var(--font-family-content);
+    font-size: var(--font-size-small);
+    color: var(--text-muted);
+    font-style: italic;
+    text-align: center;
+    padding: var(--gap-medium);
+}
+
+.no-content-message {
+    font-family: var(--font-family-content);
+    font-size: var(--font-size-small);
+    color: var(--text-muted);
+    font-style: italic;
+    text-align: center;
+    padding: var(--gap-large);
+}
+
+/* Styles pour les sections d'activités */
+.activity-description-section {
+    margin-bottom: var(--gap-large);
+}
+
+.tasks-section {
+    margin-top: var(--gap-large);
+}
+
+.tasks-section-title {
+    font-family: var(--font-family-title);
+    font-size: var(--font-size-normal);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-color);
+    margin-bottom: var(--gap-medium);
+    padding-bottom: var(--gap-tight);
+    border-bottom: var(--border-width-fine) solid var(--border-color);
+}
+
+.tasks-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-medium);
+}
+
+.task-card {
+    background-color: var(--background-lighter);
+    border: var(--border-width-fine) solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: var(--gap-medium);
+    transition: var(--transition-fast);
+}
+
+.task-card:hover {
+    border-color: var(--hover-border-color);
+}
+
+.task-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0;
+    cursor: pointer;
+}
+
+.task-name {
+    font-family: var(--font-family);
+    font-size: var(--font-size-normal);
+    font-weight: var(--font-weight-medium);
+    color: var(--text-color);
+    flex: 1;
+    margin: 0;
+}
+
+.task-description {
+    font-family: var(--font-family-content);
+    font-size: var(--font-size-small);
+    color: var(--text-muted);
+    line-height: var(--line-height-normal);
+    margin-top: var(--gap-tight);
+}
+
+.task-name-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    width: 100%;
+}
+
+.assignments-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--gap-tight);
+    align-items: center;
+}
+
+.no-tasks-message {
+    font-family: var(--font-family-content);
+    font-size: var(--font-size-small);
+    color: var(--text-muted);
+    font-style: italic;
+    text-align: center;
+    padding: var(--gap-medium);
+}
+
+/* Styles pour les cartes d'activités avec tâches (vue globale) */
+.responsibility-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--gap-medium);
+    padding: var(--gap-medium);
+    background-color: var(--background-lightest);
+    border-radius: var(--border-radius) var(--border-radius) 0 0;
+    border-bottom: var(--border-width-fine) solid var(--border-color);
+}
+
+.responsibility-info {
+    flex: 1;
+}
+
+.responsibility-name {
+    font-family: var(--font-family-title);
+    font-size: var(--font-size-medium);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-color);
+    margin: 0;
+    line-height: var(--line-height-tight);
+}
+
+.responsibility-description {
+    font-family: var(--font-family-content);
+    font-size: var(--font-size-small);
+    color: var(--text-muted);
+    margin: var(--gap-tight) 0 0 0;
+    line-height: var(--line-height-normal);
+}
+
+.co-responsibles-section {
+    margin-top: var(--gap-large);
+}
+
+.co-responsibles-title {
+    font-family: var(--font-family-title);
+    font-size: var(--font-size-normal);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-color);
+    margin-bottom: var(--gap-medium);
+    padding-bottom: var(--gap-tight);
+    border-bottom: var(--border-width-fine) solid var(--border-color);
+}
+
+.co-responsibles-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--gap-tight);
+}
+
+.no-co-responsibles {
+    font-family: var(--font-family-content);
+    font-size: var(--font-size-small);
+    color: var(--text-muted);
+    font-style: italic;
+    text-align: center;
+    padding: var(--gap-medium);
+}
+
+/* Styles pour les informations de carte */
+.content-card-info {
+    flex: 1;
+}
+
+/* Styles pour les responsables */
+.responsibles-section {
+    margin-top: var(--gap-large);
+}
+
+.responsibles-title {
+    font-family: var(--font-family-title);
+    font-size: var(--font-size-normal);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-color);
+    margin-bottom: var(--gap-medium);
+    padding-bottom: var(--gap-tight);
+    border-bottom: var(--border-width-fine) solid var(--border-color);
+}
+
+.responsibles-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--gap-tight);
+}
+
+.no-responsibles-message {
+    font-family: var(--font-family-content);
+    font-size: var(--font-size-small);
+    color: var(--text-muted);
+    font-style: italic;
+    text-align: center;
+    padding: var(--gap-medium);
+}
+
+/* === BADGES UTILISATEUR (partagé) === */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.12em 0.6em;
+  font-size: var(--font-size-small);
+  font-family: var(--font-family-content);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-color);
+  background: var(--badge-gray);
+  border-radius: 1em;
+  line-height: 1.2;
+  margin-right: 0.3em;
+  vertical-align: middle;
+  letter-spacing: 0.01em;
+  user-select: none;
+  height: 1.4em;
+  box-sizing: border-box;
+}
+.badge-user {
+  background: var(--badge-gray);
+}
+.badge-assigned-to {
+  background: var(--background-light);
+}
+.badge-responsible-for {
+  background: var(--background-medium);
+}
+.responsibles-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gap-tight);
+  align-items: center;
+  flex-shrink: 0;
 } 

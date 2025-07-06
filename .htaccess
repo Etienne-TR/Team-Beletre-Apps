@@ -15,8 +15,7 @@
 
 # Bloquer l'accès aux fichiers sensibles
 <FilesMatch "\.(htaccess|htpasswd|ini|log|sh|inc|bak|backup)$">
-    Order Allow,Deny
-    Deny from all
+    Require all denied
 </FilesMatch>
 
 # Bloquer l'accès aux dossiers .git, .vscode, etc.

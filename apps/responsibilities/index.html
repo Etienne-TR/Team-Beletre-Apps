@@ -3,63 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Responsabilités - Team Apps</title>
+    <title>Gestion des responsabilités</title>
+    
+    <!-- Styles CSS -->
+    <link rel="stylesheet" href="/shared/css/variables.css">
+    <link rel="stylesheet" href="/shared/css/navigation-tabs.css">
+    <link rel="stylesheet" href="/shared/css/content-tabs.css">
     <link rel="stylesheet" href="/shared/css/shared.css">
+    <link rel="stylesheet" href="/shared/css/content-cards.css">
+    <link rel="stylesheet" href="/shared/css/app-header.css">
+    <link rel="stylesheet" href="/shared/css/date-selector.css">
+    <link rel="stylesheet" href="/apps/responsibilities/css/variables.css">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="../../shared/images/favicon.ico">
 </head>
 <body>
-    <div id="loadingSection">
-        <div class="loading">Chargement des tâches et responsabilités...</div>
+    <!-- Section de chargement -->
+    <div id="loadingSection" class="loading-section">
+        <div class="loading-spinner"></div>
+        <p>Chargement de l'application...</p>
     </div>
     
-    <div id="authError" style="display: none;">
-        <div class="error-message">
-            <h2>Accès non autorisé</h2>
-            <p>Vous devez être connecté pour accéder à cette page.</p>
-            <a href="../../">Retour</a>
-        </div>
-    </div>
+    <!-- Header principal de l'application -->
+    <div id="appHeader"></div>
     
-    <!-- Page d'accueil avec choix -->
-    <div id="homePage" style="display: none;">
-        <header class="app-header">
-            <div class="header-content">
-                <h1 class="heading-title">📋 Tâches et responsabilités</h1>
-                <div class="header-info">
-                    <div class="user-info" id="currentUser"></div>
-                    <a href="../../" class="dashboard-link btn btn-outline">← Toutes les appli</a>
-                </div>
-            </div>
-        </header>
-
-        <main class="main-content">
-            <div class="views-container">
-                <a href="pages/global-view/index.html" class="view-card card" target="_self">
-                    <div class="view-card-icon">🗺️</div>
-                    <div class="view-card-content">
-                        <h2>Vue d'ensemble</h2>
-                        <p>Visualiser toutes les activités et leurs responsables.</p>
-                    </div>
-                </a>
-                
-                <a href="pages/worker-view/index.html" class="view-card card" target="_self">
-                    <div class="view-card-icon">👤</div>
-                    <div class="view-card-content">
-                        <h2>Fiches de poste</h2>
-                        <p>Consulter les responsabilités et tâches par travailleur.</p>
-                    </div>
-                </a>
-                
-                <a href="pages/editor/index.html" class="view-card card" target="_self">
-                    <div class="view-card-icon">✏️</div>
-                    <div class="view-card-content">
-                        <h2>Édition des activités</h2>
-                        <p>Créer et modifier les activités, responsables et tâches.</p>
-                    </div>
-                </a>
-            </div>
-        </main>
-    </div>
-
-    <script type="module" src="index.js"></script>
+    <!-- Contenu principal de l'application -->
+    <main class="app-main">
+        <!-- La navigation et le contenu des vues seront créés dynamiquement par JavaScript -->
+    </main>
+    
+    <!-- Modals et overlays -->
+    <div id="modalOverlay" class="modal-overlay"></div>
+    
+    <!-- Messages système -->
+    <div id="messageContainer" class="message-container"></div>
+    
+    <!-- Scripts JavaScript -->
+    <script type="module" src="/apps/responsibilities/js/app.js"></script>
 </body>
-</html>
+</html> 

@@ -8,10 +8,9 @@
 }
 
 .app-header {
-    background: var(--app-accent-color);
+    background: var(--accent-color);
     color: white;
-    /* padding: 1rem 0; */ /* Retiré pour éviter l'espace en bas */
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-light);
     position: sticky;
     top: 0;
     z-index: 100;
@@ -25,13 +24,13 @@
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
-    gap: 1rem;
+    gap: var(--gap-large);
 }
 
 .app-header h1 {
     margin: 0;
     font-size: var(--font-size-large);
-    font-weight: 600;
+    font-weight: var(--font-weight-semibold);
     flex: 1;
     min-width: 200px;
 }
@@ -39,7 +38,7 @@
 .header-info {
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: var(--gap-large);
     flex-wrap: wrap;
 }
 
@@ -57,13 +56,13 @@
     justify-content: center;
     
     /* Style du texte */
-    font-weight: 600;
+    font-weight: var(--font-weight-semibold);
     font-size: 0.9rem; /* Taille de police ajustée à la taille du cercle */
     color: white;
     
     /* Style de la bordure aligné sur .btn-outline */
     border: var(--border-width-normal) solid rgba(255, 255, 255, 0.5);
-    transition: all 0.2s ease;
+    transition: var(--transition-fast);
     box-sizing: border-box; /* S'assure que padding/border sont inclus dans la taille */
 }
 
@@ -81,7 +80,7 @@
         flex-direction: column;
         align-items: stretch;
         text-align: center;
-        gap: 0.5rem;
+        gap: var(--gap-tight);
     }
     
     .app-header h1 {
@@ -91,7 +90,7 @@
     
     .header-info {
         justify-content: center;
-        gap: 0.5rem;
+        gap: var(--gap-tight);
     }
     
     .user-info {
@@ -102,7 +101,7 @@
 @media (max-width: 480px) {
     .header-info {
         flex-direction: column;
-        gap: 0.5rem;
+        gap: var(--gap-tight);
         align-items: center;
     }
     
@@ -110,4 +109,17 @@
         text-align: center;
         justify-content: center;
     }
-} 
+}
+
+/* ------- Styles des filtres ------- */
+.view-filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-start;
+    padding: var(--gap-tight) var(--gap-medium);
+    background-color: var(--background-light);
+    border-radius: 0 0 var(--border-radius) var(--border-radius);
+    margin: 0;
+    box-shadow: var(--shadow-light);
+}

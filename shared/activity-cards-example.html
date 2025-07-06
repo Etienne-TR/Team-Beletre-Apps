@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exemple de Cartes d'Activités - Styles Partagés</title>
+    
+    <!-- Import des styles partagés -->
+    <link rel="stylesheet" href="css/shared.css">
+    
+    <style>
+        /* Styles spécifiques pour cet exemple */
+        .example-container {
+            padding: var(--gap-large);
+            background-color: var(--background-lightest);
+            min-height: 100vh;
+        }
+        
+        .example-header {
+            margin-bottom: var(--gap-large);
+            text-align: center;
+        }
+        
+        .example-header h1 {
+            font-family: var(--font-family-title);
+            font-size: var(--font-size-large);
+            font-weight: var(--font-weight-bold);
+            color: var(--text-color);
+            margin-bottom: var(--gap-medium);
+        }
+        
+        .example-header p {
+            font-family: var(--font-family-content);
+            font-size: var(--font-size-normal);
+            color: var(--text-muted);
+            line-height: var(--line-height-relaxed);
+        }
+        
+        /* Styles pour les badges d'utilisateurs */
+        .user-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--gap-tight);
+            padding: var(--padding-tight) var(--padding-medium);
+            background-color: var(--background-light);
+            border: var(--border-width-fine) solid var(--border-color);
+            border-radius: var(--border-radius);
+            font-family: var(--font-family);
+            font-size: var(--font-size-small);
+            color: var(--text-color);
+            margin: var(--margin-tight);
+        }
+        
+        .user-badge .initials {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 1.5rem;
+            height: 1.5rem;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 50%;
+            font-size: 0.75rem;
+            font-weight: var(--font-weight-medium);
+        }
+        
+        /* Styles pour les sections de tâches */
+        .tasks-section {
+            margin-top: var(--gap-large);
+        }
+        
+        .tasks-section h4 {
+            font-family: var(--font-family-title);
+            font-size: var(--font-size-normal);
+            font-weight: var(--font-weight-semibold);
+            color: var(--text-color);
+            margin-bottom: var(--gap-medium);
+            padding-bottom: var(--gap-tight);
+            border-bottom: var(--border-width-fine) solid var(--border-color);
+        }
+        
+        .task-item {
+            background-color: var(--background-lighter);
+            border: var(--border-width-fine) solid var(--border-color);
+            border-radius: var(--border-radius);
+            padding: var(--gap-medium);
+            margin-bottom: var(--gap-medium);
+        }
+        
+        .task-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: var(--gap-tight);
+        }
+        
+        .task-name {
+            font-family: var(--font-family);
+            font-size: var(--font-size-normal);
+            font-weight: var(--font-weight-medium);
+            color: var(--text-color);
+            flex: 1;
+        }
+        
+        .task-description {
+            font-family: var(--font-family-content);
+            font-size: var(--font-size-small);
+            color: var(--text-muted);
+            line-height: var(--line-height-normal);
+            margin-top: var(--gap-tight);
+        }
+        
+        /* Styles pour les responsables */
+        .responsibles-section {
+            margin-top: var(--gap-large);
+        }
+        
+        .responsibles-section h4 {
+            font-family: var(--font-family-title);
+            font-size: var(--font-size-normal);
+            font-weight: var(--font-weight-semibold);
+            color: var(--text-color);
+            margin-bottom: var(--gap-medium);
+            padding-bottom: var(--gap-tight);
+            border-bottom: var(--border-width-fine) solid var(--border-color);
+        }
+        
+        .responsibles-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--gap-tight);
+        }
+        
+        /* Styles pour les types d'activités */
+        .activity-type-badge {
+            display: inline-block;
+            padding: var(--padding-tight) var(--padding-medium);
+            background-color: var(--accent-color);
+            color: white;
+            border-radius: var(--border-radius);
+            font-family: var(--font-family);
+            font-size: var(--font-size-small);
+            font-weight: var(--font-weight-medium);
+            margin-bottom: var(--gap-medium);
+        }
+        
+        /* Styles pour les icônes d'activités */
+        .activity-icon {
+            font-size: 1.2em;
+            margin-right: var(--gap-tight);
+        }
+        
+        /* Styles pour les cartes sans contenu */
+        .no-content-message {
+            font-family: var(--font-family-content);
+            font-size: var(--font-size-small);
+            color: var(--text-muted);
+            font-style: italic;
+            text-align: center;
+            padding: var(--gap-large);
+        }
+    </style>
+</head>
+<body>
+    <div class="example-container">
+        <div class="example-header">
+            <h1>Cartes d'Activités - Exemple</h1>
+            <p>Démonstration des styles CSS partagés pour l'affichage des cartes d'activités avec leur contenu</p>
+        </div>
+        
+        <!-- Conteneur principal des cartes -->
+        <div class="content-cards-container">
+            
+            <!-- Carte d'activité 1 : Activité complète avec responsables et tâches -->
+            <div class="content-card activity-card">
+                <div class="content-card-header">
+                    <div>
+                        <div class="content-card-title">
+                            <span class="activity-icon">📊</span>
+                            Gestion des Finances
+                        </div>
+                        <div class="content-card-subtitle">
+                            Suivi budgétaire et comptabilité
+                        </div>
+                        <div class="activity-type-badge">Administration</div>
+                    </div>
+                </div>
+                
+                <div class="content-card-body">
+                    <div class="responsibles-section">
+                        <h4>Responsables</h4>
+                        <div class="responsibles-list">
+                            <div class="user-badge">
+                                <div class="initials">JD</div>
+                                <span>Jean Dupont</span>
+                            </div>
+                            <div class="user-badge">
+                                <div class="initials">ML</div>
+                                <span>Marie Laurent</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="tasks-section">
+                        <h4>Tâches</h4>
+                        <div class="task-item">
+                            <div class="task-header">
+                                <div class="task-name">Préparation du budget mensuel</div>
+                            </div>
+                            <div class="task-description">
+                                Collecter les données financières et préparer le rapport budgétaire mensuel
+                            </div>
+                            <div class="responsibles-list" style="margin-top: var(--gap-medium);">
+                                <div class="user-badge">
+                                    <div class="initials">JD</div>
+                                    <span>Jean Dupont</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="task-item">
+                            <div class="task-header">
+                                <div class="task-name">Vérification des comptes</div>
+                            </div>
+                            <div class="task-description">
+                                Contrôler la cohérence des écritures comptables et identifier les anomalies
+                            </div>
+                            <div class="responsibles-list" style="margin-top: var(--gap-medium);">
+                                <div class="user-badge">
+                                    <div class="initials">ML</div>
+                                    <span>Marie Laurent</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Carte d'activité 2 : Activité avec responsables mais sans tâches -->
+            <div class="content-card activity-card">
+                <div class="content-card-header">
+                    <div>
+                        <div class="content-card-title">
+                            <span class="activity-icon">🎯</span>
+                            Stratégie Marketing
+                        </div>
+                        <div class="content-card-subtitle">
+                            Développement de la stratégie commerciale
+                        </div>
+                        <div class="activity-type-badge">Marketing</div>
+                    </div>
+                </div>
+                
+                <div class="content-card-body">
+                    <div class="responsibles-section">
+                        <h4>Responsables</h4>
+                        <div class="responsibles-list">
+                            <div class="user-badge">
+                                <div class="initials">AS</div>
+                                <span>Anne Simon</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="tasks-section">
+                        <h4>Tâches</h4>
+                        <div class="no-content-message">
+                            Aucune tâche assignée pour cette activité
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Carte d'activité 3 : Activité sans responsables ni tâches -->
+            <div class="content-card activity-card">
+                <div class="content-card-header">
+                    <div>
+                        <div class="content-card-title">
+                            <span class="activity-icon">🔧</span>
+                            Maintenance Système
+                        </div>
+                        <div class="content-card-subtitle">
+                            Maintenance préventive des équipements
+                        </div>
+                        <div class="activity-type-badge">Technique</div>
+                    </div>
+                </div>
+                
+                <div class="content-card-body">
+                    <div class="responsibles-section">
+                        <h4>Responsables</h4>
+                        <div class="no-content-message">
+                            Aucun responsable assigné
+                        </div>
+                    </div>
+                    
+                    <div class="tasks-section">
+                        <h4>Tâches</h4>
+                        <div class="no-content-message">
+                            Aucune tâche assignée pour cette activité
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Carte d'activité 4 : Activité avec accent (succès) -->
+            <div class="content-card activity-card content-card--success">
+                <div class="content-card-header">
+                    <div>
+                        <div class="content-card-title">
+                            <span class="activity-icon">✅</span>
+                            Formation Équipe
+                        </div>
+                        <div class="content-card-subtitle">
+                            Programme de formation continue
+                        </div>
+                        <div class="activity-type-badge">Ressources Humaines</div>
+                    </div>
+                </div>
+                
+                <div class="content-card-body">
+                    <div class="responsibles-section">
+                        <h4>Responsables</h4>
+                        <div class="responsibles-list">
+                            <div class="user-badge">
+                                <div class="initials">PT</div>
+                                <span>Pierre Thomas</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="tasks-section">
+                        <h4>Tâches</h4>
+                        <div class="task-item">
+                            <div class="task-header">
+                                <div class="task-name">Organisation des sessions</div>
+                            </div>
+                            <div class="task-description">
+                                Planifier et organiser les sessions de formation pour l'équipe
+                            </div>
+                            <div class="responsibles-list" style="margin-top: var(--gap-medium);">
+                                <div class="user-badge">
+                                    <div class="initials">PT</div>
+                                    <span>Pierre Thomas</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Carte d'activité 5 : Activité avec avertissement -->
+            <div class="content-card activity-card content-card--warning">
+                <div class="content-card-header">
+                    <div>
+                        <div class="content-card-title">
+                            <span class="activity-icon">⚠️</span>
+                            Audit Sécurité
+                        </div>
+                        <div class="content-card-subtitle">
+                            Audit de sécurité informatique en cours
+                        </div>
+                        <div class="activity-type-badge">Sécurité</div>
+                    </div>
+                </div>
+                
+                <div class="content-card-body">
+                    <div class="responsibles-section">
+                        <h4>Responsables</h4>
+                        <div class="responsibles-list">
+                            <div class="user-badge">
+                                <div class="initials">CS</div>
+                                <span>Claire Sécurité</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="tasks-section">
+                        <h4>Tâches</h4>
+                        <div class="task-item">
+                            <div class="task-header">
+                                <div class="task-name">Analyse des vulnérabilités</div>
+                            </div>
+                            <div class="task-description">
+                                Identifier et documenter les vulnérabilités de sécurité
+                            </div>
+                            <div class="responsibles-list" style="margin-top: var(--gap-medium);">
+                                <div class="user-badge">
+                                    <div class="initials">CS</div>
+                                    <span>Claire Sécurité</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Carte pour créer une nouvelle activité -->
+            <div class="content-card content-card--create-new">
+                <div class="content-card-header">
+                    <div class="content-card-title">
+                        <span class="activity-icon">➕</span>
+                        Créer une nouvelle activité
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+        
+        <!-- Exemple de cartes imbriquées -->
+        <div style="margin-top: var(--gap-large);">
+            <h2 style="font-family: var(--font-family-title); font-size: var(--font-size-medium); margin-bottom: var(--gap-large);">
+                Exemple de Cartes Imbriquées
+            </h2>
+            
+            <div class="content-cards-container content-cards-container--nested">
+                <div class="content-card content-card--nested content-card--subgroup">
+                    <div class="content-card-header">
+                        <div class="content-card-title">
+                            <span class="activity-icon">📋</span>
+                            Sous-activité 1
+                        </div>
+                    </div>
+                    <div class="content-card-body">
+                        <p>Contenu de la sous-activité avec espacement réduit</p>
+                    </div>
+                </div>
+                
+                <div class="content-card content-card--nested content-card--subgroup">
+                    <div class="content-card-header">
+                        <div class="content-card-title">
+                            <span class="activity-icon">📝</span>
+                            Sous-activité 2
+                        </div>
+                    </div>
+                    <div class="content-card-body">
+                        <p>Autre sous-activité avec style compact</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html> 

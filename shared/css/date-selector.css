@@ -1,8 +1,35 @@
 /* Styles pour le sélecteur de date */
 .date-selector {
     display: flex;
-    align-items: center;
-    gap: 0.5rem;
+    align-items: stretch;
+    gap: 0;
+    background: white;
+    border: var(--border-width-normal) solid var(--border-color);
+    color: var(--text-color);
+    border-radius: var(--border-radius);
+    height: var(--input-height);
+    font-size: var(--font-size-normal);
+    cursor: pointer;
+    transition: var(--transition-fast);
+    box-shadow: none;
+    overflow: visible;
+    box-sizing: border-box;
+    position: relative;
+    z-index: 1;
+    line-height: var(--line-height-normal);
+    padding: 0;
+    margin: 0;
+}
+
+.date-selector > * {
+    margin: 0;
+    border: none;
+    outline: none;
+    flex-shrink: 0;
+}
+
+.date-selector > .date-nav-arrow {
+    padding: 0; /* Padding 0 seulement pour les flèches */
 }
 
 .date-nav-btn {
@@ -11,18 +38,18 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.2rem;
-    font-weight: bold;
-    background-color: white;
-    border: 1px solid var(--border-color);
+    font-size: var(--font-size-normal);
+    font-family: var(--font-family);
+    font-weight: var(--font-weight-bold);
+    background-color: var(--background-lightest);
     color: var(--text-color);
-    padding: 0 0.75rem;
+    border-radius: var(--border-radius);
     box-sizing: border-box;
-    transition: all 0.2s ease;
+    transition: var(--transition-fast);
 }
 
 .date-nav-btn:hover {
-    border-color: var(--app-accent-color);
+    /* Pas de changement de couleur de bordure au survol */
 }
 
 .date-display-btn {
@@ -31,42 +58,256 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: 600;
-    background-color: var(--app-accent-color);
-    color: white;
-    border: 1px solid var(--app-accent-color);
+    font-weight: var(--font-weight-semibold);
+    background-color: var(--accent-color);
+    color: var(--background-lightest);
+    border: var(--border-width-normal) solid var(--accent-color);
+    border-radius: var(--border-radius);
     cursor: default;
-    box-sizing: border-box;
+    padding: var(--padding-vertical-tight) var(--padding-horizontal-tight);
+    font-size: var(--font-size-normal);
+    font-family: var(--font-family);
 }
 
 .date-display-btn:hover {
-    background-color: var(--app-accent-color);
-    border-color: var(--app-accent-color);
+    background-color: var(--accent-color);
+    border-color: var(--accent-color);
 }
 
 /* Style pour les flèches de navigation */
 .date-nav-arrow {
-    display: inline-block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    font-size: var(--font-size-normal);
+    color: var(--text-color);
+    border: none;
+    background: none;
+    border-radius: 0;
+    transition: var(--transition-fast);
+    cursor: pointer;
+    box-sizing: border-box;
+    margin: 0;
+    position: relative;
+    height: 100%;
+    flex-shrink: 0;
+    min-width: 2rem;
+    max-width: 2rem;
+    z-index: 1;
     line-height: 1;
-    font-size: 1.5rem;
+    padding: 0;
+}
+
+.date-nav-arrow.year-prev {
+    border-radius: 0;
+    margin: 0;
+}
+
+.date-nav-arrow.year-next {
+    border-radius: 0 var(--border-radius) var(--border-radius) 0;
+    margin: 0;
+}
+
+.date-nav-arrow:hover, 
+.date-nav-arrow:focus {
+    background: var(--hover-background);
+    margin: 0;
+    padding: 0;
+}
+
+.date-nav-arrow.year-next:hover,
+.date-nav-arrow.year-next:focus {
+    border-radius: 0 calc(var(--border-radius) - var(--border-width-normal)) calc(var(--border-radius) - var(--border-width-normal)) 0;
+}
+
+/* Styles pour le composant DateSelector */
+.date-display-label {
+    font-weight: var(--font-weight-medium);
+    font-size: var(--font-size-normal);
+    font-family: var(--font-family);
+    color: var(--text-color);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    background: none;
+    border: none;
+    transition: var(--transition-fast);
+    box-sizing: border-box;
+    position: relative;
+    z-index: 1;
+    line-height: 1;
+    padding: var(--padding-vertical-tight) var(--padding-horizontal-tight); /* Padding seulement à gauche */
+    margin: 0;
+    height: 100%;
+    flex: 1;
+    min-width: 0;
+    width: auto;
+}
+
+.date-display-label:hover, 
+.date-display-label:focus {
+    background: none; /* Pas de background sur tout le label */
+    margin: 0;
+}
+
+.date-display-label:hover::before, 
+.date-display-label:focus::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0; /* S'étend sur toute la largeur du label */
+    bottom: 0;
+    background: var(--hover-background);
+    border-radius: calc(var(--border-radius) - var(--border-width-normal)) 0 0 calc(var(--border-radius) - var(--border-width-normal));
+    z-index: -1;
+}
+
+/* Styles pour le calendrier popup */
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--gap-medium);
+    color: var(--text-color);
+}
+
+.calendar-title {
+    font-weight: var(--font-weight-semibold);
+    text-transform: capitalize;
+    color: var(--text-color);
+    flex: 1;
+    text-align: left;
+}
+
+.calendar-nav-group {
+    display: flex;
+    gap: var(--gap-tight);
+    margin-left: auto;
+}
+
+.calendar-header .calendar-nav-btn {
+    width: 2rem;
+    height: var(--input-height);
+    min-width: 2rem;
+    min-height: var(--input-height);
+    max-width: 2rem;
+    max-height: var(--input-height);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--border-radius);
+    padding: var(--padding-vertical-tight) var(--padding-horizontal-tight);
+    font-size: var(--font-size-normal);
+    font-weight: var(--font-weight-normal);
+    background: none;
+    transition: var(--transition-fast);
+    border: none;
+    color: var(--text-color);
+    cursor: pointer;
+}
+
+.calendar-header .calendar-nav-btn:hover,
+.calendar-header .calendar-nav-btn:focus {
+    background: var(--hover-background);
+}
+
+.calendar-popup {
+    position: absolute;
+    top: 100%;
+    right: calc(-1 * var(--border-width-normal));
+    left: auto;
+    transform: none;
+    background: var(--background-lightest);
+    border: var(--border-width-normal) solid var(--border-color);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-heavy);
+    z-index: 1000;
+    min-width: 280px;
+    padding: var(--gap-medium);
+    margin-top: var(--gap-tight);
+    box-sizing: border-box;
+}
+
+.calendar-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: var(--gap-tight);
+    margin-bottom: var(--gap-tight);
+}
+
+.calendar-weekdays span {
+    text-align: center;
+    font-size: var(--font-size-small);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-muted);
+    padding: var(--gap-tight);
+}
+
+.calendar-days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: var(--gap-tight);
+}
+
+.calendar-day {
+    border: none;
+    background: none;
+    padding: var(--gap-tight);
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    font-size: var(--font-size-small);
+    transition: var(--transition-fast);
+    min-height: var(--input-height);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.calendar-day:hover:not(:disabled) {
+    background-color: var(--hover-background);
+}
+
+.calendar-day.selected {
+    background-color: var(--accent-color);
+    color: var(--background-lightest);
+}
+
+.calendar-day.today {
+    font-weight: var(--font-weight-bold);
+    border: var(--border-width-normal) solid var(--accent-color);
+}
+
+.calendar-day.other-month {
+    color: var(--text-light);
+}
+
+.calendar-day:disabled {
+    cursor: var(--disabled-cursor);
 }
 
 /* Responsive */
 @media (max-width: 768px) {
     .date-selector {
-        gap: 0.25rem;
+        gap: var(--gap-tight);
     }
     
     .date-nav-btn {
         min-width: 2.5rem;
         height: var(--input-height);
-        font-size: 1rem;
-        padding: 0 0.5rem;
+        font-size: var(--font-size-normal);
+        padding: var(--padding-vertical-tight) var(--padding-horizontal-tight);
     }
     
     .date-display-btn {
         min-width: 3.5rem;
         height: var(--input-height);
-        font-size: 0.9rem;
+        font-size: var(--font-size-small);
+    }
+    
+    .calendar-popup {
+        min-width: 260px;
+        padding: var(--gap-tight);
     }
 } 

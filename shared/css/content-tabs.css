@@ -30,7 +30,10 @@
 
 /* Lien de l'onglet */
 .tabs-nav-link {
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--gap-tight);
     width: 100%;
     padding: var(--gap-medium) var(--gap-large);
     text-decoration: none;
@@ -47,16 +50,32 @@
     outline: var(--focus-outline);
 }
 
+/* Icône de l'onglet */
+.tab-icon {
+    font-size: var(--font-size-medium);
+    line-height: var(--line-height-tight);
+    opacity: var(--opacity-hover);
+    transition: var(--transition-normal);
+}
+
 /* État de survol */
 .tabs-nav-link:hover {
     color: var(--text-color);
     background-color: var(--hover-background);
 }
 
+.tabs-nav-link:hover .tab-icon {
+    opacity: 1;
+}
+
 /* État actif */
 .tabs-nav-link.active {
     color: var(--primary-color);
     font-weight: var(--font-weight-semibold);
+}
+
+.tabs-nav-link.active .tab-icon {
+    opacity: 1;
 }
 
 /* Trait de soulignement pour l'onglet actif */
@@ -82,6 +101,10 @@
     color: var(--disabled-color);
     background-color: var(--disabled-background);
     cursor: var(--disabled-cursor);
+    opacity: var(--opacity-disabled);
+}
+
+.tabs-nav-link:disabled .tab-icon {
     opacity: var(--opacity-disabled);
 }
 
@@ -122,6 +145,12 @@
     .tabs-nav-link {
         padding: var(--gap-tight) var(--gap-medium);
         font-size: var(--font-size-small);
+        flex-direction: column;
+        gap: var(--gap-tight);
+    }
+    
+    .tab-icon {
+        font-size: var(--font-size-normal);
     }
     
     .tabs-content {
@@ -135,8 +164,16 @@
     font-size: var(--font-size-small);
 }
 
+.tabs-container.compact .tab-icon {
+    font-size: var(--font-size-normal);
+}
+
 /* Variante avec onglets plus espacés */
 .tabs-container.spacious .tabs-nav-link {
     padding: var(--gap-large) calc(var(--gap-large) * 2);
     font-size: var(--font-size-medium);
+}
+
+.tabs-container.spacious .tab-icon {
+    font-size: var(--font-size-large);
 } 

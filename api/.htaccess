@@ -2,20 +2,17 @@
 
 # Bloquer l'accès direct à config.php
 <Files "config.php">
-    Order Allow,Deny
-    Deny from all
+    Require all denied
 </Files>
 
 # Autoriser tous les .php SAUF config.php
 <FilesMatch "\.php$">
-    Order Allow,Deny
-    Allow from all
+    Require all granted
 </FilesMatch>
 
 # Bloquer l'accès aux fichiers de sauvegarde et temporaires
 <FilesMatch "\.(bak|backup|old|tmp|log)$">
-    Order Allow,Deny
-    Deny from all
+    Require all denied
 </FilesMatch>
 
 # Empêcher le listing des répertoires

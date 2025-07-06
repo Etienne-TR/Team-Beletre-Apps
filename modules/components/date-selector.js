@@ -43,8 +43,8 @@ function generateCalendarHTML(year, month, selectedDate) {
         <div class="calendar-header">
             <span class="calendar-title">${new Date(year, month).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}</span>
             <span class="calendar-nav-group">
-                <button class="btn btn-sm btn-outline calendar-nav-btn" data-cal-nav="-1" title="Mois précédent"><span>‹</span></button>
-                <button class="btn btn-sm btn-outline calendar-nav-btn" data-cal-nav="1" title="Mois suivant"><span>›</span></button>
+                <button class="calendar-nav-btn" data-cal-nav="-1" title="Mois précédent">‹</button>
+                <button class="calendar-nav-btn" data-cal-nav="1" title="Mois suivant">›</button>
             </span>
         </div>
         <div class="calendar-grid">
@@ -107,212 +107,42 @@ export class DateSelector {
     
     render() {
         const dateStr = formatDateFr(this.currentDate);
-        this.container.innerHTML = `
-            <div class="date-selector">
-                <div class="date-nav-combo">
-                    <span class="date-display-label" tabindex="0" title="Sélectionner une date">${dateStr}</span>
-                    <span class="date-nav-arrow year-prev" tabindex="0" title="Année précédente">‹</span>
-                    <span class="date-nav-arrow year-next" tabindex="0" title="Année suivante">›</span>
-                </div>
-                <div class="calendar-popup" style="display: none;">
-                    ${generateCalendarHTML(this.calendarYear, this.calendarMonth, this.currentDate)}
-                </div>
-            </div>
-        `;
+        this.container.innerHTML = `<div class="date-selector"><div class="date-display-label" tabindex="0" title="Sélectionner une date">${dateStr}</div><div class="date-nav-arrow year-prev" tabindex="0" title="Année précédente">‹</div><div class="date-nav-arrow year-next" tabindex="0" title="Année suivante">›</div><div class="calendar-popup" style="display: none;">${generateCalendarHTML(this.calendarYear, this.calendarMonth, this.currentDate)}</div></div>`;
         this.container.dateSelector = this;
         this.addStyles();
         this.attachCalendarEvents();
 
         // Gestion des clics sur la date et les flèches
-        const combo = this.container.querySelector('.date-nav-combo');
-        if (combo) {
-            combo.addEventListener('click', (e) => {
-                if (e.target.classList.contains('year-prev')) {
-                    this.navigateYear(-1);
-                    e.stopPropagation();
-                } else if (e.target.classList.contains('year-next')) {
-                    this.navigateYear(1);
-                    e.stopPropagation();
-                } else if (e.target.classList.contains('date-display-label')) {
-                    this.toggleCalendar();
-                }
+        const dateDisplayLabel = this.container.querySelector('.date-display-label');
+        const yearPrev = this.container.querySelector('.year-prev');
+        const yearNext = this.container.querySelector('.year-next');
+        
+        if (dateDisplayLabel) {
+            dateDisplayLabel.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.toggleCalendar();
+            });
+        }
+        
+        if (yearPrev) {
+            yearPrev.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.navigateYear(-1);
+            });
+        }
+        
+        if (yearNext) {
+            yearNext.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.navigateYear(1);
             });
         }
     }
     
     addStyles() {
-        if (document.getElementById('date-selector-styles')) return;
-        const style = document.createElement('style');
-        style.id = 'date-selector-styles';
-        style.textContent = `
-            :root {
-                --date-selector-height: var(--input-height, 36px);
-                --date-selector-arrow-width: 28px;
-            }
-            .date-selector {
-                position: relative;
-                display: flex;
-                align-items: center;
-                gap: 4px;
-            }
-            .date-nav-combo {
-                display: flex;
-                align-items: center;
-                gap: 0;
-                background: #fff;
-                border: 1px solid #ced4da;
-                color: #222;
-                border-radius: 6px;
-                height: var(--date-selector-height);
-                font-size: 1em;
-                cursor: pointer;
-                transition: background 0.2s, border 0.2s;
-                box-shadow: none;
-                padding: 0;
-                overflow: hidden;
-            }
-            .date-display-label {
-                padding: 0 12px;
-                font-weight: 500;
-                font-size: 1em;
-                color: #222;
-                cursor: pointer;
-                height: var(--date-selector-height);
-                display: flex;
-                align-items: center;
-                background: none;
-                border: none;
-                transition: background 0.2s;
-            }
-            .date-display-label:hover, .date-display-label:focus {
-                background: #f0f0f0;
-            }
-            .date-nav-arrow {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                width: var(--date-selector-arrow-width);
-                height: var(--date-selector-height);
-                font-size: 1.2em;
-                color: #222;
-                border: none;
-                background: none;
-                border-radius: 0 6px 6px 0;
-                transition: background 0.2s;
-                cursor: pointer;
-            }
-            .date-nav-arrow.year-prev {
-                border-radius: 0;
-            }
-            .date-nav-arrow.year-next {
-                border-radius: 0 6px 6px 0;
-            }
-            .date-nav-arrow:hover, .date-nav-arrow:focus {
-                background: #f0f0f0;
-            }
-            .calendar-header {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                margin-bottom: 12px;
-                color: #222;
-            }
-            .calendar-title {
-                font-weight: 600;
-                text-transform: capitalize;
-                color: #222;
-                flex: 1;
-                text-align: left;
-            }
-            .calendar-nav-group {
-                display: flex;
-                gap: 4px;
-                margin-left: auto;
-            }
-            .calendar-header .calendar-nav-btn {
-                width: var(--date-selector-arrow-width);
-                height: var(--date-selector-height);
-                min-width: var(--date-selector-arrow-width);
-                min-height: var(--date-selector-height);
-                max-width: var(--date-selector-arrow-width);
-                max-height: var(--date-selector-height);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                border-radius: 6px;
-                padding: 0;
-                font-size: 1.2em;
-                background: none;
-                transition: background 0.2s;
-            }
-            .calendar-header .calendar-nav-btn:hover,
-            .calendar-header .calendar-nav-btn:focus {
-                background: #f0f0f0;
-            }
-            .calendar-header .btn span {
-                color: #222;
-            }
-            .calendar-popup {
-                position: absolute;
-                top: 100%;
-                right: 0;
-                left: auto;
-                transform: none;
-                background: white;
-                border: 1px solid #ddd;
-                border-radius: 8px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                z-index: 1000;
-                min-width: 280px;
-                padding: 12px;
-                margin-top: 4px;
-            }
-            .calendar-weekdays {
-                display: grid;
-                grid-template-columns: repeat(7, 1fr);
-                gap: 2px;
-                margin-bottom: 8px;
-            }
-            .calendar-weekdays span {
-                text-align: center;
-                font-size: 0.8em;
-                font-weight: 600;
-                color: #666;
-                padding: 4px;
-            }
-            .calendar-days {
-                display: grid;
-                grid-template-columns: repeat(7, 1fr);
-                gap: 2px;
-            }
-            .calendar-day {
-                border: none;
-                background: none;
-                padding: 8px 4px;
-                border-radius: 4px;
-                cursor: pointer;
-                font-size: 0.9em;
-                transition: background-color 0.2s;
-            }
-            .calendar-day:hover:not(:disabled) {
-                background-color: #f0f0f0;
-            }
-            .calendar-day.selected {
-                background-color: #007bff;
-                color: white;
-            }
-            .calendar-day.today {
-                font-weight: bold;
-                border: 2px solid #007bff;
-            }
-            .calendar-day.other-month {
-                color: #ccc;
-            }
-            .calendar-day:disabled {
-                cursor: not-allowed;
-            }
-        `;
-        document.head.appendChild(style);
+        // Les styles sont maintenant dans shared/css/date-selector.css
+        // et sont importés via shared.css
+        return;
     }
     
     attachCalendarEvents() {
@@ -346,6 +176,8 @@ export class DateSelector {
         
         if (this.calendarVisible) {
             popup.style.display = 'block';
+            // Réattacher les événements du calendrier
+            this.attachCalendarEvents();
             // Fermer le calendrier si on clique ailleurs
             setTimeout(() => {
                 document.addEventListener('click', this.handleOutsideClick.bind(this), { once: true });
@@ -377,6 +209,7 @@ export class DateSelector {
     }
     
     selectDate(dateString) {
+        console.log('DateSelector.selectDate appelé avec:', dateString);
         const newDate = new Date(dateString);
         this.currentDate = newDate;
         this.calendarYear = this.currentDate.getFullYear();
@@ -389,6 +222,7 @@ export class DateSelector {
         }
         // Formater la date pour l'API (YYYY-MM-DD) avant de la passer au callback
         const formattedDate = formatDateForAPI(this.currentDate);
+        console.log('DateSelector.selectDate - appel du callback avec:', formattedDate);
         this.onDateChange(formattedDate);
         
         // Réactiver le gestionnaire d'événement pour fermer le calendrier en cliquant à l'extérieur
@@ -398,6 +232,7 @@ export class DateSelector {
     }
     
     navigateYear(direction) {
+        console.log('DateSelector.navigateYear appelé avec direction:', direction);
         // Créer une nouvelle date et modifier l'année
         const newDate = new Date(this.currentDate);
         newDate.setFullYear(this.currentDate.getFullYear() + direction);
@@ -412,7 +247,7 @@ export class DateSelector {
         
         // Formater la date pour l'API (YYYY-MM-DD) avant de la passer au callback
         const formattedDate = formatDateForAPI(this.currentDate);
-        console.log('DateSelector: nouvelle date sélectionnée:', formattedDate);
+        console.log('DateSelector.navigateYear - appel du callback avec:', formattedDate);
         
         // Appeler le callback avec la date formatée
         this.onDateChange(formattedDate);

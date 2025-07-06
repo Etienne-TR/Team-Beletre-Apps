@@ -186,6 +186,69 @@ onDateChange((newDate, formattedDate) => {
 - Toutes les vues se synchronisent automatiquement
 - Responsive design avec adaptation mobile
 
+### `navigation-tabs.js`
+**Navigation par onglets entre les vues d'application**
+
+```javascript
+import { 
+    createTabNavigation, 
+    setupTabNavigation, 
+    createAndSetupTabNavigation 
+} from '../../../modules/components/navigation-tabs.js';
+
+// Définir les vues disponibles
+const views = [
+    { id: 'global-view', label: 'Vue globale', icon: '📋' },
+    { id: 'editor', label: 'Éditeur', icon: '✏️' },
+    { id: 'worker-view', label: 'Fiches de poste', icon: '👥' }
+];
+
+// Créer et configurer la navigation
+const navigation = createAndSetupTabNavigation(views, {
+    activeView: 'global-view',
+    onViewChange: (viewName) => {
+        console.log('Vue changée:', viewName);
+    }
+});
+
+// Ajouter à la page
+document.querySelector('.app-navigation').appendChild(navigation);
+```
+
+**Fonctionnalités :**
+- Navigation fluide entre les vues d'application
+- Gestion automatique de l'historique navigateur
+- Support des icônes pour chaque vue
+- Accessibilité complète (clavier, ARIA)
+- Responsive design avec adaptation mobile
+- Intégration avec le système de filtres existant
+
+**Interface :**
+```
+[📋 Vue globale] [✏️ Éditeur] [👥 Fiches de poste]
+```
+
+**API :**
+- `createTabNavigation(views, options)` : Crée l'élément de navigation
+- `setupTabNavigation(element, options)` : Configure la logique
+- `createAndSetupTabNavigation(views, options)` : Crée et configure en une fois
+- `restoreTabState(element, currentView)` : Restaure l'état des onglets
+
+**Options :**
+- `activeView` : Vue active par défaut
+- `className` : Classe CSS personnalisée
+- `compact` : Mode compact pour les onglets
+- `spacious` : Mode espacé pour les onglets
+- `onViewChange` : Callback lors du changement de vue
+- `updateURL` : Mise à jour automatique de l'URL
+
+**Comportement :**
+- Navigation sans rechargement de page
+- Synchronisation avec l'URL (paramètre `?view=`)
+- Gestion automatique des filtres par vue
+- Transitions fluides entre les vues
+- Support complet de l'accessibilité
+
 ## 🔗 Comment utiliser
 
 ### Import simple

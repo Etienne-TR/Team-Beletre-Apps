@@ -39,7 +39,7 @@ class SynthesisAPI extends BaseAPI {
     private function getActivityTypes() {
         try {
             $sql = "
-                SELECT DISTINCT at.name as type_name, at.description as type_description
+                SELECT DISTINCT at.entry, at.name, at.description
                 FROM activity_types at
                 INNER JOIN activities a ON at.entry = a.activity_type
                 WHERE at.status = 'current' AND a.status = 'current'
@@ -50,7 +50,7 @@ class SynthesisAPI extends BaseAPI {
             $stmt->execute();
             $types = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
-            $this->sendSuccess(['types' => $types]);
+            $this->sendSuccess(['activity_types' => $types]);
             
         } catch (Exception $e) {
             $this->sendError('Erreur lors de la récupération des types: ' . $e->getMessage());

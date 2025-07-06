@@ -1,0 +1,201 @@
+/* ========================================
+   NAVIGATION PAR ONGLETS ENTRE VUES
+   ========================================
+   
+   Composant de navigation par onglets pour naviguer entre les vues d'application
+   Design sobre et moderne utilisant les variables du système de design
+   ======================================== */
+
+/* Conteneur principal de la navigation */
+.navigation-tabs-container {
+    width: 100%;
+    background-color: var(--background-lightest);
+    margin-bottom: 0;
+    border-bottom: var(--border-width-fine) solid var(--border-color);
+}
+
+/* Navigation des onglets */
+.navigation-tabs-nav {
+    display: flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    gap: 0;
+}
+
+/* Onglet individuel */
+.navigation-tabs-nav-item {
+    flex: 1;
+    position: relative;
+}
+
+/* Lien de l'onglet */
+.navigation-tabs-nav-link {
+    display: flex;
+    
+    align-items: center;
+    justify-content: center;
+    gap: var(--gap-tight);
+    width: 100%;
+    height: var(--input-height);
+    padding: var(--gap-medium) var(--gap-large);
+    text-decoration: none;
+    color: var(--text-color);
+    background-color: var(--background-light);
+    border: none;
+    cursor: pointer;
+    font-family: var(--font-family);
+    font-size: var(--font-size-normal);
+    font-weight: var(--font-weight-medium);
+    text-align: center;
+    transition: var(--transition-normal);
+    position: relative;
+    outline: var(--focus-outline);
+}
+
+/* Icône de l'onglet */
+.navigation-tab-icon {
+    font-size: var(--font-size-medium);
+    opacity: var(--opacity-hover);
+    transition: var(--transition-normal);
+}
+
+/* État de survol */
+.navigation-tabs-nav-link:hover {
+    color: var(--text-color);
+    background-color: var(--background-dark);
+}
+
+/* Trait de soulignement pour le survol */
+.navigation-tabs-nav-link:hover::after {
+    content: '';
+    position: absolute;
+    bottom: calc(-1 * var(--border-width-fine));
+    left: 0;
+    width: 100%;
+    height: var(--border-width-normal);
+    background-color: var(--text-color);
+    border-radius: 0;
+}
+
+.navigation-tabs-nav-link:hover .navigation-tab-icon {
+    opacity: 1;
+}
+
+/* État actif */
+.navigation-tabs-nav-link.active {
+    color: var(--text-color);
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    background-color: var(--background-medium);
+}
+
+.navigation-tabs-nav-link.active .navigation-tab-icon {
+    opacity: 1;
+}
+
+/* Trait de soulignement pour l'onglet actif */
+.navigation-tabs-nav-link.active::after {
+    content: '';
+    position: absolute;
+    bottom: calc(-1 * var(--border-width-fine));
+    left: 0;
+    width: 100%;
+    height: var(--border-width-normal);
+    background-color: var(--text-color);
+    border-radius: 0;
+}
+
+/* État de focus */
+.navigation-tabs-nav-link:focus {
+    box-shadow: none;
+    border-radius: 0;
+}
+
+/* État désactivé */
+.navigation-tabs-nav-link:disabled {
+    color: var(--disabled-color);
+    background-color: var(--disabled-background);
+    cursor: var(--disabled-cursor);
+    opacity: var(--opacity-disabled);
+}
+
+.navigation-tabs-nav-link:disabled .navigation-tab-icon {
+    opacity: var(--opacity-disabled);
+}
+
+/* Animation de transition pour les onglets */
+.navigation-tabs-nav-link {
+    animation: fadeIn var(--transition-normal);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .navigation-tabs-nav-link {
+        padding: var(--gap-tight) var(--gap-medium);
+        font-size: var(--font-size-small);
+        flex-direction: column;
+        gap: var(--gap-tight);
+    }
+    
+    .navigation-tab-icon {
+        font-size: var(--font-size-normal);
+    }
+}
+
+/* Variante avec onglets plus compacts */
+.navigation-tabs-container.compact .navigation-tabs-nav-link {
+    padding: var(--gap-tight) var(--gap-medium);
+    font-size: var(--font-size-small);
+}
+
+.navigation-tabs-container.compact .navigation-tab-icon {
+    font-size: var(--font-size-normal);
+}
+
+/* Variante avec onglets plus espacés */
+.navigation-tabs-container.spacious .navigation-tabs-nav-link {
+    padding: var(--gap-large) calc(var(--gap-large) * 2);
+    font-size: var(--font-size-medium);
+}
+
+.navigation-tabs-container.spacious .navigation-tab-icon {
+    font-size: var(--font-size-large);
+}
+
+/* Indicateur de chargement pour les onglets */
+.navigation-tabs-nav-link.loading {
+    position: relative;
+    pointer-events: none;
+}
+
+.navigation-tabs-nav-link.loading::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 16px;
+    height: 16px;
+    margin: -8px 0 0 -8px;
+    border: 2px solid var(--border-color);
+    border-top: 2px solid var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+} 

@@ -2,7 +2,7 @@
 
 /* Variables CSS pour les couleurs de l'application */
 :root {
-    --app-accent-color: #6366f1; /* Indigo pour l'administration */
+    --accent-color: #6366f1; /* Indigo pour l'administration */
 }
 
 /* Styles pour les cartes de vue */
@@ -31,7 +31,7 @@
 .view-card:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    border-color: var(--app-accent-color);
+    border-color: var(--accent-color);
 }
 
 .view-card-icon {
@@ -42,7 +42,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--app-accent-color);
+    background: var(--accent-color);
     color: white;
     border-radius: 0.5rem;
 }

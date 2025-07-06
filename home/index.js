@@ -3,7 +3,7 @@
 // donc nous utilisons des fonctions locales pour l'instant
 
 // Import du store global pour l'instancier en amont
-import { globalStore } from '../modules/store/store.js';
+import { globalStore } from '/modules/store/store.js';
 
 async function checkAuth() {
     try {

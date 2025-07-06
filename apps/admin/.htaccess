@@ -2,14 +2,12 @@
 
 # Autoriser l'accès aux fichiers HTML, CSS, JS et PHP
 <FilesMatch "\.(html|css|js|php)$">
-    Order Allow,Deny
-    Allow from all
+    Require all granted
 </FilesMatch>
 
 # Bloquer tout le reste
 <FilesMatch "^(?!.*\.(html|css|js|php)$).*">
-    Order Allow,Deny
-    Deny from all
+    Require all denied
 </FilesMatch>
 
 # Empêcher le listing des répertoires

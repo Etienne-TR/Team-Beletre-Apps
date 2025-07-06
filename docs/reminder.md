@@ -1,6 +1,9 @@
 
 ES6 uniquement
-chemins relatifs sytématiques
+
+Chemins d'imports ES6 ou autre :
+- relatifs pour les imports internes aux applications
+- chemins absolues pour /modules et /shared
 
 ## Store centralisé (gestion des états de l'interface)
 utiliser uniquement /modules/store/store.js

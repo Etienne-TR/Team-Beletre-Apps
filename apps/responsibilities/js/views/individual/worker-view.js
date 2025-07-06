@@ -8,17 +8,22 @@ import {
     createResponsibleBadge,
     createAssignmentBadge
 } from '../../services/shared.js';
-import { getSelectedDate, setSelectedDate, getExpandedActivityCard } from '/modules/store/responsibilities.js';
+import { 
+    getSelectedDate, 
+    setSelectedDate, 
+    getExpandedActivityCard,
+    addEventListener,
+    removeEventListener
+} from '/modules/store/responsibilities.js';
 import { globalStore } from '/modules/store/store.js';
-import { createAppHeader } from '/modules/components/app-header.js';
 import { updateUserInfo } from '/modules/components/user-info.js';
 import { formatActivityNameEscaped, formatTypeName } from '/modules/utils/activity-formatter.js';
 import { formatActivityDescription } from '/modules/utils/activity-description.js';
-import { 
+import {
     createActivityCard,
     createTaskCard,
     createActivityWithTasksCard
-} from '/apps/responsibilities/components/activity-card.js';
+} from '../../components/activity-card.js';
 import { cache } from '/modules/cache/cache.js';
 import { DateSelector } from '/modules/components/date-selector.js';
 import { formatDateForAPI } from '/modules/utils/date-utils.js';
@@ -28,88 +33,97 @@ let selectedWorkerId = null; // ID du travailleur sélectionné
 let selectedContent = 'responsibilities'; // Type de contenu sélectionné
 let workersData = {}; // Cache des données des travailleurs
 let dateSelector = null; // Instance du sélecteur de date
+let container = null; // Conteneur de la vue
+let selectedDateChangeListener = null; // Écouteur de changement de date
 
-// Initialisation
-document.addEventListener('DOMContentLoaded', async function() {
+/**
+ * Initialiser la vue des travailleurs
+ * @param {HTMLElement} viewContainer - Le conteneur de la vue
+ */
+export async function initializeWorkerView(viewContainer) {
     console.log('Vue des travailleurs - début de l\'initialisation...');
+    container = viewContainer;
     
     try {
-        const authSuccess = await checkAuthAndLoadData();
-        if (authSuccess) {
-            // Initialiser la date dans le store si pas encore définie
-            let currentDateFromStore = getSelectedDate();
-            if (!currentDateFromStore) {
-                setSelectedDate(formatDateForAPI(new Date()));
-                currentDateFromStore = formatDateForAPI(new Date());
-            }
-            
-            // Créer les filtres
-            const filters = document.createElement('div');
-            filters.className = 'filters';
-            filters.innerHTML = `
-                <div class="worker-selector">
-                    <select id="workerSelect" class="select-style">
-                        <option value="">Choisir un travailleur...</option>
-                    </select>
-                </div>
-                <div class="content-buttons btn-group-container">
-                    <button class="btn selection-btn selection-btn--content active" data-content="responsibilities">En responsabilité</button>
-                    <button class="btn selection-btn selection-btn--content" data-content="tasks">Autres</button>
-                </div>
-            `;
-            // Ajout dynamique du conteneur du sélecteur de date à la fin des filtres
-            const dateSelectorContainer = document.createElement('div');
-            dateSelectorContainer.id = 'dateSelectorContainer';
-            filters.appendChild(dateSelectorContainer);
-            
-            // Créer le header dynamiquement avec les filtres
-            const headerContainer = document.getElementById('appHeader');
-            const header = createAppHeader(
-                '📋 Fiches de poste',
-                '../../index.html',
-                'currentUserWorker',
-                'app-view',
-                filters
-            );
-            headerContainer.appendChild(header);
-            
-            // Initialiser le sélecteur de date avec la date du store
-            const initialDate = getSelectedDate() || formatDateForAPI(new Date());
-            dateSelector = new DateSelector(dateSelectorContainer, {
-                initialDate: new Date(initialDate),
-                onDateChange: (dateStr) => {
-                    console.log('DateSelector.onDateChange - nouvelle date:', dateStr);
-                    // Le DateSelector passe déjà une chaîne formatée YYYY-MM-DD
-                    setSelectedDate(dateStr);
-                    loadWorkersForDate(dateStr).then(() => {
-                        if (selectedWorkerId) {
-                            loadWorkerData(selectedWorkerId, dateStr);
-                        }
-                    });
-                }
-            });
-            
-            // Mettre à jour les informations utilisateur après la création du header
-            updateUserInfo(globalStore.getUser());
-            
-            document.getElementById('workerPage').style.display = 'block';
-            document.getElementById('loadingSection').style.display = 'none';
-            
-            setupEventListeners();
-            
-            // Charger les travailleurs pour la date actuelle
-            await loadWorkersForDate(getSelectedDate());
+        // Initialiser la date dans le store si pas encore définie
+        let currentDateFromStore = getSelectedDate();
+        if (!currentDateFromStore) {
+            setSelectedDate(formatDateForAPI(new Date()));
+            currentDateFromStore = formatDateForAPI(new Date());
         }
+        
+        // Créer les filtres
+        const filters = document.createElement('div');
+        filters.className = 'view-filters';
+        filters.innerHTML = `
+            <div class="text-selector">
+                <select id="workerSelect" class="select-style">
+                    <option value="">Choisir un travailleur...</option>
+                </select>
+            </div>
+            <div class="btn-group-container">
+                <button class="btn active" data-content="responsibilities">En responsabilité</button>
+                <button class="btn" data-content="tasks">Autres</button>
+            </div>
+            <div class="spacer"></div>
+        `;
+        // Ajout dynamique du conteneur du sélecteur de date à la fin des filtres
+        const dateSelectorContainer = document.createElement('div');
+        filters.appendChild(dateSelectorContainer);
+        // Ajouter les filtres directement au conteneur de la vue
+        container.appendChild(filters);
+        
+        // Initialiser le sélecteur de date avec la date du store
+        const initialDate = getSelectedDate() || formatDateForAPI(new Date());
+        dateSelector = new DateSelector(dateSelectorContainer, {
+            initialDate: new Date(initialDate),
+            onDateChange: (dateStr) => {
+                console.log('DateSelector.onDateChange - nouvelle date:', dateStr);
+                setSelectedDate(dateStr);
+                // Note: loadWorkersForDate() et loadWorkerData() seront appelés automatiquement par l'écouteur d'événement
+            }
+        });
+        
+        // Créer le conteneur des activités
+        const workerActivitiesContainer = document.createElement('div');
+        workerActivitiesContainer.id = 'workerActivitiesContainer';
+        workerActivitiesContainer.className = 'content-cards-container';
+        container.appendChild(workerActivitiesContainer);
+        
+        // Créer l'état vide
+        const workerEmptyState = document.createElement('div');
+        workerEmptyState.id = 'workerEmptyState';
+        workerEmptyState.style.display = 'block';
+        workerEmptyState.innerHTML = `
+            <h3>Sélectionnez un travailleur</h3>
+            <p>Choisissez un travailleur dans la liste pour voir ses activités.</p>
+        `;
+        container.appendChild(workerEmptyState);
+        
+        setupEventListeners();
+        
+        // Charger les travailleurs pour la date actuelle
+        await loadWorkersForDate(getSelectedDate());
+        
+        // Afficher le contenu par défaut (responsabilités) si un travailleur est sélectionné
+        if (selectedWorkerId) {
+            displaySelectedContent();
+        }
+        
+        // Ajouter l'écouteur de changement de date
+        setupSelectedDateChangeListener();
+        
+        console.log('Vue des travailleurs initialisée avec succès');
+        
     } catch (error) {
-        console.error('Erreur lors de l\'initialisation:', error);
-        document.getElementById('loadingSection').style.display = 'none';
-        showMessage('Erreur lors de l\'initialisation de la page', 'error');
+        console.error('Erreur lors de l\'initialisation de la vue des travailleurs:', error);
+        showMessage('Erreur lors de l\'initialisation de la vue des travailleurs', 'error');
     }
-});
+}
 
 function setupEventListeners() {
     // Gestion des boutons de contenu
-    document.querySelectorAll('.selection-btn--content').forEach(btn => {
+    document.querySelectorAll('.btn-group-container .btn').forEach(btn => {
         btn.addEventListener('click', function() {
             const content = this.dataset.content;
             selectContent(content, this);
@@ -128,9 +142,6 @@ function setupEventListeners() {
                 selectedWorkerId = null;
                 clearWorkerActivities();
             }
-            
-            // Ajuster la largeur du select après le changement
-            adjustSelectWidth(this);
         });
     }
 }
@@ -140,7 +151,7 @@ function selectContent(content, buttonElement = null) {
     selectedContent = content;
     
     // Mettre à jour l'état visuel des boutons
-    document.querySelectorAll('.selection-btn--content').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.btn-group-container .btn').forEach(btn => btn.classList.remove('active'));
     if (buttonElement) buttonElement.classList.add('active');
     
     // Si un travailleur est sélectionné, recharger ses données
@@ -224,6 +235,9 @@ function populateWorkerSelect(workers) {
         return;
     }
     
+    // S'assurer que le select utilise les styles partagés
+    select.className = 'select-style';
+    
     // Sauvegarder la sélection actuelle
     const currentSelection = selectedWorkerId;
     
@@ -239,13 +253,31 @@ function populateWorkerSelect(workers) {
             select.appendChild(option);
         });
         
+        // Récupérer l'utilisateur courant depuis le store global
+        const currentUser = globalStore.getUser();
+        
         // Restaurer la sélection si le travailleur existe toujours dans la nouvelle liste
         if (currentSelection && workers.some(worker => String(worker.id) === String(currentSelection))) {
             selectedWorkerId = currentSelection;
             select.value = currentSelection;
             console.log('✅ Sélection restaurée avec succès:', selectedWorkerId);
+        } else if (currentUser && currentUser.id) {
+            // Si aucun travailleur n'est sélectionné, essayer de sélectionner l'utilisateur courant
+            const currentUserExists = workers.some(worker => String(worker.id) === String(currentUser.id));
+            if (currentUserExists) {
+                selectedWorkerId = String(currentUser.id);
+                select.value = selectedWorkerId;
+                console.log('✅ Utilisateur courant sélectionné par défaut:', selectedWorkerId);
+                // Charger les données du travailleur sélectionné
+                loadWorkerData(selectedWorkerId, getSelectedDate());
+            } else {
+                // Si l'utilisateur courant n'existe pas dans la liste, réinitialiser la sélection
+                selectedWorkerId = null;
+                clearWorkerActivities();
+                console.log('❌ Utilisateur courant non trouvé dans la liste des travailleurs');
+            }
         } else {
-            // Si le travailleur n'existe plus, réinitialiser la sélection et effacer les activités
+            // Si le travailleur n'existe plus et pas d'utilisateur courant, réinitialiser la sélection
             selectedWorkerId = null;
             clearWorkerActivities();
             console.log('❌ Sélection réinitialisée car le travailleur n\'existe plus');
@@ -255,19 +287,12 @@ function populateWorkerSelect(workers) {
         selectedWorkerId = null;
         clearWorkerActivities();
     }
-    
-    // Ajuster la largeur du select
-    adjustSelectWidth(select);
 }
 
 function adjustSelectWidth(select) {
-    // Ajuster la largeur du select en fonction du contenu
-    const tempOption = document.createElement('option');
-    tempOption.textContent = select.options[select.selectedIndex]?.textContent || 'Choisir un travailleur...';
-    select.appendChild(tempOption);
-    const width = tempOption.offsetWidth + 20; // Ajouter un peu d'espace
-    select.style.width = `${width}px`;
-    select.removeChild(tempOption);
+    // Utiliser les classes CSS partagées
+    // La classe select-style dans shared.css gère déjà la largeur correctement
+    select.classList.add('select-style');
 }
 
 async function loadWorkerData(userId, date) {
@@ -430,4 +455,34 @@ function restoreExpandedActivityCards() {
             console.log('Carte d\'activité non trouvée dans le DOM - pas de restauration');
         }
     }
+}
+
+/**
+ * Configurer l'écouteur de changement de date
+ */
+function setupSelectedDateChangeListener() {
+    // Supprimer l'ancien écouteur s'il existe
+    if (selectedDateChangeListener) {
+        removeEventListener('selectedDate', selectedDateChangeListener);
+    }
+    
+    // Créer le nouvel écouteur
+    selectedDateChangeListener = (newDate) => {
+        console.log('Vue worker - Changement de date détecté:', newDate);
+        if (newDate) {
+            // Mettre à jour le sélecteur de date si nécessaire
+            if (dateSelector && dateSelector.setDate) {
+                dateSelector.setDate(new Date(newDate));
+            }
+            // Recharger les travailleurs et les données
+            loadWorkersForDate(newDate).then(() => {
+                if (selectedWorkerId) {
+                    loadWorkerData(selectedWorkerId, newDate);
+                }
+            });
+        }
+    };
+    
+    // Ajouter l'écouteur
+    addEventListener('selectedDate', selectedDateChangeListener);
 }

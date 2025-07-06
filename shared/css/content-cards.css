@@ -109,6 +109,23 @@
     /* border-bottom: var(--border-width-fine) solid var(--border-color); */
 }
 
+
+.content-card-title-container {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    width: 100%;
+    gap: var(--gap-tight);
+}
+
+.content-card-title-container .content-card-title {
+    flex: 1;
+    min-width: fit-content;
+    white-space: nowrap;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
 .content-card-title {
     /* Layout */
     flex: 1;
@@ -122,6 +139,11 @@
     /* Espacement */
     margin: 0;
     line-height: var(--line-height-tight);
+    
+    /* Gestion du texte long - retour à la ligne seulement si nécessaire */
+    white-space: normal;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 .content-card-title-meta {
@@ -136,6 +158,11 @@
     
     /* Espacement */
     line-height: var(--line-height-tight);
+    
+    /* Gestion du texte long - retour à la ligne seulement si nécessaire */
+    white-space: normal;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 .content-card-subtitle {
@@ -275,6 +302,35 @@
     transform: var(--transform-none);
     box-shadow: var(--shadow-light);
     border-color: var(--border-color);
+}
+
+/* ========================================
+   ÉTATS D'AFFICHAGE DES CARTES
+   ======================================== */
+
+/* Corps de carte replié */
+.content-card-body--collapsed {
+    display: none;
+}
+
+/* Corps de carte déplié */
+.content-card-body--expanded {
+    display: block;
+}
+
+/* Description de tâche repliée */
+.task-description--collapsed {
+    display: none;
+}
+
+/* Description de tâche dépliée */
+.task-description--expanded {
+    display: block;
+}
+
+/* Éléments cliquables */
+.clickable {
+    cursor: pointer;
 }
 
 /* ========================================

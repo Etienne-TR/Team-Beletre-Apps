@@ -1,6 +1,6 @@
 // Test pour vérifier que selectedDate est bien partagé globalement
-import { getSelectedDate, setSelectedDate } from './modules/store/responsibilities.js';
-import { globalStore } from './modules/store/store.js';
+import { getSelectedDate, setSelectedDate } from '/modules/store/responsibilities.js';
+import { globalStore } from '/modules/store/store.js';
 
 console.log('=== TEST DE PARTAGE DE SELECTEDDATE ===');
 

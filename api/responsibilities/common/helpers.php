@@ -95,5 +95,4 @@ function organizeActivityData($results) {
     }
     
     return array_values($activities);
-}
-?> 
+} 

@@ -19,8 +19,7 @@
     /* Couleurs principales */
     --primary-color: #2e7d32;
     --secondary-color: #4caf50;
-    --accent-color: #81c784;
-    --app-accent-color: #4caf50; /* Couleur d'accent pour les applications */
+    --accent-color: #4caf50; /* Couleur d'accent pour les applications */
     
     /* Couleurs de texte */
     --text-color: #333;
@@ -31,7 +30,9 @@
     --background-lightest: #ffffff;
     --background-lighter: #f8f9fa;
     --background-light: #e9ecef;
-    --background-dark: #f5f5f5;
+    --background-medium: #dee2e6;
+    --background-dark: #d1d5db;
+    --background-darker: #b8c0c8;
     --background-disabled: #e9e9e9;
     --background-success: #f0f8f0;
     --background-success-light: #e8f5e8;
@@ -43,10 +44,6 @@
     --error-color: #f44336;
     --success-color: #4caf50;
     --warning-color: #ff9800;
-    
-    /* Couleurs de badge */
-    --badge-gray: #6c757d;
-    --badge-blue: #007cba;
     
     /* ========================================
        📝 POLICES
@@ -92,6 +89,28 @@
     --gap-tight: 0.35rem;
     --gap-medium: 0.75rem;
     --gap-large: 1.5rem;
+    
+    /* Start Generation Here */
+    /* Variables d'espacement (margin) */
+    --margin-tiny: 0.25rem;      /* Très petit - pour les espacements minimaux */
+    --margin-tight: 0.35rem;     /* Serré - pour les espacements compacts */
+    --margin-medium: 0.75rem;    /* Moyen - pour les espacements standard */
+    --margin-large: 1.5rem;      /* Large - pour les espacements généreux */
+    /* End Generation Here */
+
+    
+    /* Variables pour le padding */
+    --padding-tight: 0.25rem;           /* Padding serré */
+    --padding-medium: 0.5rem;     /* Padding moyen */
+    --padding-large: 1rem;        /* Padding large */
+    
+    --padding-horizontal-tight: 0.75rem;   /* Padding horizontal serré */
+    --padding-horizontal-medium: 1rem;     /* Padding horizontal moyen */
+    --padding-horizontal-large: 1.5rem;    /* Padding horizontal large */
+    
+    --padding-vertical-tight: 0.25rem;           /* Padding vertical serré */
+    --padding-vertical-medium: 0.5rem;     /* Padding vertical moyen */
+    --padding-vertical-large: 1rem;        /* Padding vertical large */
     
     /* Variables pour line-height */
     --line-height-tight: 1.2;     /* Serré - pour les titres compacts */

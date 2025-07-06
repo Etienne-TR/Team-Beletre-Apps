@@ -1,7 +1,7 @@
 // modules/cache/example-usage.js
 // Exemples d'utilisation du cache global
 
-import { cache, cacheManager, onChange } from './cache.js';
+import { cache, cacheManager, onChange } from '/modules/cache/cache.js';
 
 // ===== EXEMPLE 1 : Cache API =====
 

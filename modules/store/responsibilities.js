@@ -1,5 +1,61 @@
-import { globalStore } from './store.js';
-import { formatDateForAPI } from '../utils/date-utils.js';
+import { globalStore } from '/modules/store/store.js';
+import { formatDateForAPI } from '/modules/utils/date-utils.js';
+
+// Système d'événements pour notifier les vues des changements
+const eventListeners = new Map();
+
+/**
+ * Ajouter un écouteur d'événement pour les changements d'état
+ * @param {string} event - Nom de l'événement ('selectedActivityType', 'selectedDate', etc.)
+ * @param {Function} callback - Fonction à appeler quand l'événement se produit
+ */
+export function addEventListener(event, callback) {
+    if (!eventListeners.has(event)) {
+        eventListeners.set(event, []);
+    }
+    eventListeners.get(event).push(callback);
+}
+
+/**
+ * Supprimer un écouteur d'événement
+ * @param {string} event - Nom de l'événement
+ * @param {Function} callback - Fonction à supprimer
+ */
+export function removeEventListener(event, callback) {
+    if (eventListeners.has(event)) {
+        const listeners = eventListeners.get(event);
+        const index = listeners.indexOf(callback);
+        if (index > -1) {
+            listeners.splice(index, 1);
+        }
+    }
+}
+
+/**
+ * Déclencher un événement
+ * @param {string} event - Nom de l'événement
+ * @param {any} data - Données à passer aux écouteurs
+ */
+function triggerEvent(event, data) {
+    console.log('=== TRIGGER EVENT ===');
+    console.log('Événement:', event);
+    console.log('Données:', data);
+    console.log('Écouteurs enregistrés:', eventListeners.has(event) ? eventListeners.get(event).length : 0);
+    
+    if (eventListeners.has(event)) {
+        eventListeners.get(event).forEach(callback => {
+            try {
+                console.log('Appel du callback...');
+                callback(data);
+                console.log('Callback exécuté avec succès');
+            } catch (error) {
+                console.error('Erreur dans l\'écouteur d\'événement:', error);
+            }
+        });
+    } else {
+        console.log('Aucun écouteur pour cet événement');
+    }
+}
 
 // État initial de responsibilities
 const initialState = {
@@ -28,6 +84,7 @@ console.log('État initial responsibilities:', globalStore.getState('responsibil
  */
 export function setSelectedDate(date) {
     globalStore.setState('responsibilities', { selectedDate: date });
+    triggerEvent('selectedDate', date);
 }
 
 /**
@@ -44,6 +101,7 @@ export function getSelectedDate() {
  */
 export function setSelectedActivityType(type) {
     globalStore.setState('responsibilities', { selectedActivityType: type });
+    triggerEvent('selectedActivityType', type);
 }
 
 /**
@@ -59,7 +117,12 @@ export function getSelectedActivityType() {
  * @param {string} cardId - ID de la carte d'activité dépliée
  */
 export function setExpandedActivityCard(cardId) {
+    console.log('=== STORE setExpandedActivityCard ===');
+    console.log('cardId reçu:', cardId);
     globalStore.setState('responsibilities', { expandedActivityCard: cardId });
+    console.log('État mis à jour, déclenchement de l\'événement...');
+    triggerEvent('expandedActivityCard', cardId);
+    console.log('Événement expandedActivityCard déclenché');
 }
 
 /**
@@ -75,6 +138,7 @@ export function getExpandedActivityCard() {
  */
 export function clearExpandedActivityCard() {
     globalStore.setState('responsibilities', { expandedActivityCard: null });
+    triggerEvent('expandedActivityCard', null);
 }
 
 // ===== ACTIONS POUR EDITOR VIEW =====

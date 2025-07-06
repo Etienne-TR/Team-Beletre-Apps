@@ -4,7 +4,7 @@
 import { 
     createResponsibleBadge,
     createAssignmentBadge
-} from '/apps/responsibilities/services/shared.js';
+} from '../services/shared.js';
 import { formatActivityNameEscaped } from '/modules/utils/activity-formatter.js';
 import { formatActivityDescription } from '/modules/utils/activity-description.js';
 import { 
@@ -23,10 +23,10 @@ import {
  */
 export function createActivityCard(activity, responsibles = null, tasks = null, options = {}) {
     const card = document.createElement('div');
-    card.className = 'activity-card card collapsible';
+    card.className = 'content-card activity-card';
     
-    // Générer un ID unique pour la carte basé uniquement sur l'ID de l'activité
-    const cardId = `activity-${activity.id}`;
+    // Générer un ID unique pour la carte basé sur l'entry de l'activité
+    const cardId = `activity-${activity.entry || activity.id}`;
     card.dataset.cardId = cardId;
     
     // En-tête compact avec nom et badges des responsables
@@ -35,8 +35,7 @@ export function createActivityCard(activity, responsibles = null, tasks = null, 
     
     // Contenu détaillé (masqué par défaut)
     const detailedContent = document.createElement('div');
-    detailedContent.className = 'detailed-content';
-    detailedContent.style.display = 'none';
+    detailedContent.className = 'content-card-body content-card-body--collapsed';
     
     // Description de l'activité
     const description = createActivityDescription(activity, options);
@@ -66,18 +65,18 @@ export function createActivityCard(activity, responsibles = null, tasks = null, 
  */
 function createCompactHeader(activity, responsibles = null, options = {}) {
     const header = document.createElement('div');
-    header.className = 'compact-header';
+    header.className = 'content-card-header';
     
     const nameRow = document.createElement('div');
-    nameRow.className = 'activity-name-row';
+    nameRow.className = 'content-card-title-container';
     
     const name = document.createElement(options.nameTag || 'h3');
-    name.className = 'activity-name';
+    name.className = 'content-card-title';
     name.textContent = formatActivityNameEscaped(activity);
     
     nameRow.appendChild(name);
     
-    // Ajouter les badges des responsables sur la même ligne
+    // Ajouter les badges des responsables
     const responsiblesList = responsibles || activity.responsible;
     if (responsiblesList && responsiblesList.length > 0) {
         const badgesContainer = document.createElement('div');
@@ -103,7 +102,7 @@ function createCompactHeader(activity, responsibles = null, options = {}) {
  */
 function createActivityDescription(activity, options = {}) {
     const descriptionSection = document.createElement('div');
-    descriptionSection.className = 'description-section';
+    descriptionSection.className = 'activity-description-section';
     
     const description = document.createElement('p');
     description.className = options.descriptionClass || 'activity-description';
@@ -121,7 +120,7 @@ function createActivityDescription(activity, options = {}) {
  * @param {Object} options - Options de configuration
  */
 function setupCardToggle(card, header, cardId, options = {}) {
-    const detailedContent = card.querySelector('.detailed-content');
+    const detailedContent = card.querySelector('.content-card-body');
     
     header.addEventListener('click', function(e) {
         // Éviter le basculement si on clique sur un badge
@@ -129,39 +128,35 @@ function setupCardToggle(card, header, cardId, options = {}) {
             return;
         }
         
-        const isExpanded = detailedContent.style.display !== 'none';
+        const isExpanded = detailedContent.classList.contains('content-card-body--expanded');
         
         if (isExpanded) {
             // Réduire
-            detailedContent.style.display = 'none';
+            detailedContent.classList.remove('content-card-body--expanded');
+            detailedContent.classList.add('content-card-body--collapsed');
             card.classList.remove('expanded');
             
             // Mémoriser dans le store
             clearExpandedActivityCard();
         } else {
-            // Fermer toutes les autres cartes d'activité dépliées
-            const allActivityCards = document.querySelectorAll('.activity-card');
-            allActivityCards.forEach(otherCard => {
-                if (otherCard !== card) {
-                    const otherContent = otherCard.querySelector('.detailed-content');
-                    if (otherContent && otherContent.style.display !== 'none') {
-                        otherContent.style.display = 'none';
-                        otherCard.classList.remove('expanded');
-                    }
-                }
-            });
-            
             // Développer
-            detailedContent.style.display = 'block';
+            detailedContent.classList.remove('content-card-body--collapsed');
+            detailedContent.classList.add('content-card-body--expanded');
             card.classList.add('expanded');
             
-            // Mémoriser dans le store
-            setExpandedActivityCard(cardId);
+            // Mémoriser dans le store (sauvegarder l'entry de l'activité)
+            const activityEntry = cardId.replace('activity-', '');
+            console.log('=== CLIC CARTE GLOBAL-VIEW ===');
+            console.log('cardId:', cardId);
+            console.log('activityEntry:', activityEntry);
+            console.log('Appel de setExpandedActivityCard...');
+            setExpandedActivityCard(activityEntry);
+            console.log('setExpandedActivityCard appelé');
         }
     });
     
     // Rendre l'en-tête cliquable visuellement
-    header.style.cursor = 'pointer';
+    header.classList.add('clickable');
 }
 
 /**
@@ -176,7 +171,7 @@ function createTasksSection(tasks, options = {}) {
         section.className = options.tasksSectionClass || 'tasks-section';
         
         const title = document.createElement(options.tasksTitleTag || 'h4');
-        title.className = options.tasksTitleClass || 'tasks-title';
+        title.className = options.tasksTitleClass || 'tasks-section-title';
         title.textContent = options.tasksTitleText || 'Tâches';
         section.appendChild(title);
         
@@ -186,7 +181,7 @@ function createTasksSection(tasks, options = {}) {
         return section;
     } else {
         const noTasks = document.createElement('div');
-        noTasks.className = options.noTasksClass || 'no-tasks';
+        noTasks.className = options.noTasksClass || 'no-tasks-message';
         noTasks.textContent = options.noTasksText || 'Aucune tâche assignée';
         return noTasks;
     }
@@ -218,7 +213,7 @@ function createTasksList(tasks, options = {}) {
  */
 export function createTaskCard(task, options = {}) {
     const taskCard = document.createElement('div');
-    taskCard.className = options.taskCardClass || 'task-card card collapsible';
+    taskCard.className = options.taskCardClass || 'task-card';
     
     // Générer un ID unique pour la carte de tâche basé uniquement sur l'ID de la tâche
     const taskCardId = `task-${task.id || task.task_id}`;
@@ -262,8 +257,7 @@ export function createTaskCard(task, options = {}) {
     
     // Description de la tâche (masquée par défaut)
     const taskDescription = document.createElement('div');
-    taskDescription.className = options.taskDescriptionClass || 'task-description';
-    taskDescription.style.display = 'none';
+    taskDescription.className = options.taskDescriptionClass || 'task-description task-description--collapsed';
     taskDescription.textContent = formatActivityDescription(task.description || task.task_description || 'Aucune description disponible.');
     
     taskCard.appendChild(taskDescription);
@@ -293,11 +287,12 @@ function setupTaskCardToggle(taskCard, taskHeader, taskCardId, options = {}) {
             return;
         }
         
-        const isExpanded = taskDescription.style.display !== 'none';
+        const isExpanded = taskDescription.classList.contains('task-description--expanded');
         
         if (isExpanded) {
             // Réduire
-            taskDescription.style.display = 'none';
+            taskDescription.classList.remove('task-description--expanded');
+            taskDescription.classList.add('task-description--collapsed');
             taskCard.classList.remove('expanded');
         } else {
             // Fermer toutes les autres cartes de tâches dépliées dans le même conteneur
@@ -307,8 +302,9 @@ function setupTaskCardToggle(taskCard, taskHeader, taskCardId, options = {}) {
                 allTaskCards.forEach(otherTaskCard => {
                     if (otherTaskCard !== taskCard) {
                         const otherDescription = otherTaskCard.querySelector('.task-description');
-                        if (otherDescription && otherDescription.style.display !== 'none') {
-                            otherDescription.style.display = 'none';
+                        if (otherDescription && otherDescription.classList.contains('task-description--expanded')) {
+                            otherDescription.classList.remove('task-description--expanded');
+                            otherDescription.classList.add('task-description--collapsed');
                             otherTaskCard.classList.remove('expanded');
                         }
                     }
@@ -316,13 +312,14 @@ function setupTaskCardToggle(taskCard, taskHeader, taskCardId, options = {}) {
             }
             
             // Développer
-            taskDescription.style.display = 'block';
+            taskDescription.classList.remove('task-description--collapsed');
+            taskDescription.classList.add('task-description--expanded');
             taskCard.classList.add('expanded');
         }
     });
     
     // Rendre l'en-tête cliquable visuellement
-    taskHeader.style.cursor = 'pointer';
+    taskHeader.classList.add('clickable');
 }
 
 /**
@@ -334,29 +331,29 @@ function setupTaskCardToggle(taskCard, taskHeader, taskCardId, options = {}) {
  * @returns {HTMLElement} - L'élément DOM de la carte
  */
 export function createActivityWithTasksCard(activity, responsibles, tasks, options = {}) {
-    // Options spécifiques pour la vue des travailleurs
-    const workerOptions = {
-        headerClass: 'responsibility-header',
-        infoClass: 'responsibility-info',
-        nameClass: 'responsibility-name',
-        descriptionClass: 'responsibility-description',
-        responsiblesSectionClass: 'co-responsibles-section',
-        responsiblesTitleClass: 'co-responsibles-title',
-        responsiblesListClass: 'co-responsibles-list',
-        responsiblesTitleText: 'Co-responsables',
-        noResponsiblesClass: 'no-co-responsibles',
-        noResponsiblesText: 'Aucun co-responsable',
+    // Options spécifiques pour la vue globale - utiliser les mêmes classes que la vue editor
+    const globalOptions = {
+        headerClass: 'content-card-header',
+        infoClass: 'content-card-info',
+        nameClass: 'content-card-title',
+        descriptionClass: 'activity-description',
+        responsiblesSectionClass: 'responsibles-section',
+        responsiblesTitleClass: 'responsibles-title',
+        responsiblesListClass: 'responsibles-list',
+        responsiblesTitleText: 'Responsables',
+        noResponsiblesClass: 'no-responsibles-message',
+        noResponsiblesText: 'Aucun responsable assigné',
         tasksSectionClass: 'tasks-section',
-        tasksTitleClass: 'tasks-title',
+        tasksTitleClass: 'tasks-section-title',
         tasksListClass: 'tasks-list',
-        noTasksClass: 'no-tasks',
+        noTasksClass: 'no-tasks-message',
         noTasksText: 'Aucune tâche assignée',
         filterAssignments: true,
         selectedWorkerId: options.selectedWorkerId,
         ...options
     };
     
-    return createActivityCard(activity, responsibles, tasks, workerOptions);
+    return createActivityCard(activity, responsibles, tasks, globalOptions);
 }
 
 /**
@@ -395,19 +392,23 @@ export function createSimpleTaskCard(task, assignments, options = {}) {
  * @param {Object} options - Options de configuration
  */
 function restoreCardState(card, cardId, options = {}) {
-    const detailedContent = card.querySelector('.detailed-content');
+    const detailedContent = card.querySelector('.content-card-body');
     let isExpanded = false;
     
     // Vérifier l'état dans le store
     const expandedCardId = getExpandedActivityCard();
-    isExpanded = expandedCardId === cardId;
+    // Le store contient l'entry de l'activité, pas l'ID de la carte
+    const activityEntry = cardId.replace('activity-', '');
+    isExpanded = expandedCardId === activityEntry;
     
     // Appliquer l'état restauré
     if (isExpanded) {
-        detailedContent.style.display = 'block';
+        detailedContent.classList.remove('content-card-body--collapsed');
+        detailedContent.classList.add('content-card-body--expanded');
         card.classList.add('expanded');
     } else {
-        detailedContent.style.display = 'none';
+        detailedContent.classList.remove('content-card-body--expanded');
+        detailedContent.classList.add('content-card-body--collapsed');
         card.classList.remove('expanded');
     }
 }
@@ -422,6 +423,7 @@ function restoreTaskCardState(taskCard, taskCardId, options = {}) {
     const taskDescription = taskCard.querySelector('.task-description');
     
     // Les cartes de tâches ne persistent pas leur état, elles restent fermées par défaut
-    taskDescription.style.display = 'none';
+    taskDescription.classList.remove('task-description--expanded');
+    taskDescription.classList.add('task-description--collapsed');
     taskCard.classList.remove('expanded');
 } 
