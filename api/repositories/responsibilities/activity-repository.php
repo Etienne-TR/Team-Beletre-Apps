@@ -258,6 +258,7 @@ class ActivityRepository extends BaseRepository {
     public function getResponsiblesForActivity($activity, $date) {
         $stmt = $this->pdo->prepare("
             SELECT 
+                rf.entry,
                 rf.user as responsible_user_id,
                 u.display_name as responsible_display_name,
                 u.initials as responsible_initials,
@@ -342,5 +343,56 @@ class ActivityRepository extends BaseRepository {
             ORDER BY name
         ');
         return $this->fetchAll($stmt, ['status' => 'current']);
+    }
+    
+    /**
+     * Mettre à jour une assignation de tâche (écrase la version actuelle)
+     */
+    public function updateAssignedTo($entry, $data, $userId) {
+        $stmt = $this->pdo->prepare("
+            UPDATE assigned_to 
+            SET task = ?, user = ?, start_date = ?, end_date = ?
+            WHERE entry = ? AND status = 'current'
+        ");
+        
+        return $this->executeQuery($stmt, [
+            Helpers::sanitize($data['task']),
+            $data['user_id'],
+            $data['date'],
+            $data['end_date'] ?? null,
+            $entry
+        ]);
+    }
+    
+    /**
+     * Mettre à jour une responsabilité d'activité (écrase la version actuelle)
+     */
+    public function updateResponsibleFor($entry, $data, $userId) {
+        $stmt = $this->pdo->prepare("
+            UPDATE responsible_for 
+            SET activity = ?, user = ?, start_date = ?, end_date = ?
+            WHERE entry = ? AND status = 'current'
+        ");
+        
+        return $this->executeQuery($stmt, [
+            Helpers::sanitize($data['activity']),
+            $data['user_id'],
+            $data['date'],
+            $data['end_date'] ?? null,
+            $entry
+        ]);
+    }
+    
+    /**
+     * Supprimer toutes les versions d'une responsabilité d'activité
+     * ATTENTION: Vrai DELETE dans une table avec versioning - supprime toutes les versions
+     */
+    public function deleteResponsibleFor($entry) {
+        $stmt = $this->pdo->prepare("
+            DELETE FROM responsible_for 
+            WHERE entry = ?
+        ");
+        
+        return $this->executeQuery($stmt, [$entry]);
     }
 } 

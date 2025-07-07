@@ -1,7 +1,0 @@
-# Configuration minimale pour l'application admin
-RewriteEngine On
-
-# Redirection vers index.html si le fichier n'existe pas
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^(.*)$ index.html [L] 

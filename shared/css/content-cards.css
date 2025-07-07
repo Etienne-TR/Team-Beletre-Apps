@@ -281,6 +281,12 @@
     background-color: transparent;
 }
 
+/* Titre de taille normale pour les cartes de création dans un contexte de sous-groupe */
+.content-cards-container--nested .content-card--create-new .content-card-title {
+    font-size: var(--font-size-normal);
+    font-weight: var(--font-weight-medium);
+}
+
 /* ========================================
    CARTE DÉSACTIVÉE
    ======================================== */
@@ -372,39 +378,6 @@
         font-size: var(--font-size-small);
     }
 }
-
-/* Styles spécifiques pour les cartes d'activité */
-.activity-card .compact-header {
-    /* Layout */
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--gap-medium);
-    padding: var(--gap-medium);
-    
-    /* Bordure */
-    border-bottom: var(--border-width-fine) solid var(--border-color);
-    
-    /* Fond */
-    background-color: var(--background-lightest);
-    border-radius: var(--border-radius) var(--border-radius) 0 0;
-    
-    /* Transition pour les coins arrondis */
-    transition: border-radius var(--transition-normal);
-}
-
-/* Quand la carte d'activité est collapsed, l'en-tête a des coins arrondis en bas */
-.activity-card:not(.expanded) .compact-header {
-    border-radius: var(--border-radius);
-    border-bottom: none;
-}
-
-/* Quand la carte d'activité est expanded, l'en-tête garde ses coins arrondis en haut seulement */
-.activity-card.expanded .compact-header {
-    border-radius: var(--border-radius) var(--border-radius) 0 0;
-    border-bottom: var(--border-width-fine) solid var(--border-color);
-}
-
 
 /* ========================================
    CARTES IMBRIQUÉES

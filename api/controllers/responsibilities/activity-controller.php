@@ -59,6 +59,15 @@ class ActivityController extends BaseAPI {
             case 'get_assigned_to':
                 $this->getAssignedTo();
                 break;
+            case 'update_assigned_to':
+                $this->updateAssignedTo();
+                break;
+            case 'update_responsible_for':
+                $this->updateResponsibleFor();
+                break;
+            case 'delete_responsible_for':
+                $this->deleteResponsibleFor();
+                break;
             
             // === TYPES D'ACTIVITÉS ===
             case 'get_activity_types':
@@ -266,6 +275,76 @@ class ActivityController extends BaseAPI {
             
         } catch (Exception $e) {
             $this->sendError('Erreur lors de la récupération des personnes assignées: ' . $e->getMessage(), $e->getCode() ?: 500);
+        }
+    }
+    
+    /**
+     * Mettre à jour une assignation de tâche
+     */
+    private function updateAssignedTo() {
+        try {
+            $this->requireMethod('POST');
+            
+            $entry = $_GET['entry'] ?? '';
+            if (empty($entry)) {
+                $this->sendError('Entry requis');
+            }
+            
+            $data = $this->getJsonInput();
+            $result = $this->activityService->updateAssignedTo($entry, $data, $this->currentUser['id']);
+            
+            $this->sendSuccess($result, 'Assignation mise à jour avec succès');
+            
+        } catch (Exception $e) {
+            $this->sendError('Erreur lors de la mise à jour: ' . $e->getMessage(), $e->getCode() ?: 500);
+        }
+    }
+    
+    /**
+     * Mettre à jour une responsabilité d'activité
+     */
+    private function updateResponsibleFor() {
+        try {
+            $this->requireMethod('POST');
+            
+            $entry = $_GET['entry'] ?? '';
+            if (empty($entry)) {
+                $this->sendError('Entry requis');
+            }
+            
+            $data = $this->getJsonInput();
+            $result = $this->activityService->updateResponsibleFor($entry, $data, $this->currentUser['id']);
+            
+            $this->sendSuccess($result, 'Responsabilité mise à jour avec succès');
+            
+        } catch (Exception $e) {
+            $this->sendError('Erreur lors de la mise à jour: ' . $e->getMessage(), $e->getCode() ?: 500);
+        }
+    }
+    
+    /**
+     * Supprimer une responsabilité d'activité
+     */
+    private function deleteResponsibleFor() {
+        try {
+            // Accepter DELETE ou POST avec _method=DELETE
+            $method = $_SERVER['REQUEST_METHOD'];
+            $jsonInput = $this->getJsonInput();
+            
+            if ($method === 'DELETE' || ($method === 'POST' && isset($jsonInput['_method']) && $jsonInput['_method'] === 'DELETE')) {
+                $entry = $_GET['entry'] ?? '';
+                if (empty($entry)) {
+                    $this->sendError('Entry requis');
+                }
+                
+                $this->activityService->deleteResponsibleFor($entry, $this->currentUser['id']);
+                $this->sendSuccess(null, 'Responsabilité supprimée avec succès');
+            } else {
+                $this->sendError('Méthode non autorisée');
+            }
+            
+        } catch (Exception $e) {
+            $this->sendError('Erreur lors de la suppression: ' . $e->getMessage(), $e->getCode() ?: 500);
         }
     }
     

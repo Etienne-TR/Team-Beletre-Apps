@@ -30,6 +30,9 @@ class GlobalController extends BaseAPI {
             case 'get_activity_types':
                 $this->getActivityTypes();
                 break;
+            case 'get_users':
+                $this->getUsers();
+                break;
             case 'export_csv':
                 $this->exportCSV();
                 break;
@@ -48,6 +51,19 @@ class GlobalController extends BaseAPI {
             
         } catch (Exception $e) {
             $this->sendError('Erreur lors de la récupération des types: ' . $e->getMessage(), $e->getCode() ?: 500);
+        }
+    }
+    
+    /**
+     * Récupérer la liste des utilisateurs actifs
+     */
+    private function getUsers() {
+        try {
+            $result = $this->globalService->getUsers();
+            $this->sendSuccess($result);
+            
+        } catch (Exception $e) {
+            $this->sendError('Erreur lors de la récupération des utilisateurs: ' . $e->getMessage(), $e->getCode() ?: 500);
         }
     }
     

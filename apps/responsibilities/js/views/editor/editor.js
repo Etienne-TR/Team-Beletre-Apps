@@ -28,6 +28,7 @@ import {
     removeEventListener
 } from '/modules/store/responsibilities.js';
 import { formatDateForAPI, formatPeriodLiterary } from '/modules/utils/date-utils.js';
+import { showEditAssignmentModal, validateAssignmentForm, saveResponsibility } from './edit-assigned-to.js';
 
 // Variables globales
 let availableTypes = [];
@@ -897,9 +898,6 @@ function createActivityCard(activity, options = {}) {
     const card = document.createElement('div');
     card.className = 'content-card';
     card.dataset.activityId = activity.id;
-    
-    // Assurer que la carte est cliquable (utiliser les classes CSS au lieu des styles inline)
-    card.classList.add('clickable');
 
     // En-tête de la carte (nom à gauche, dates à droite)
     const header = document.createElement('div');
@@ -942,22 +940,25 @@ function createActivityCard(activity, options = {}) {
     
     card.appendChild(body);
     
-    // Attacher l'écouteur d'événement pour la carte
-    
-    // Événement click standard
-    card.addEventListener('click', (e) => {
-        handleCardInteraction(e, card, activity, detailsContent);
-    });
-    
-    // Fonction de gestion commune pour tous les événements
-    function handleCardInteraction(e, card, activity, detailsContent) {
-        // Si le clic est sur un élément interactif à l'intérieur de la carte, ne pas déplier/replier
-        if (e.target.closest('.tabs-nav-link') || e.target.closest('button:not(.content-card-header)')) {
+    // Attacher l'écouteur d'événement UNIQUEMENT sur le header
+    header.addEventListener('click', (e) => {
+        // Empêcher la propagation vers d'autres éléments
+        e.stopPropagation();
+        
+        // Si le clic est sur un élément interactif dans le header, ne pas déplier/replier
+        if (e.target.closest('button')) {
             return;
         }
         
         toggleActivityCard(card, activity, detailsContent);
-    }
+    });
+    
+    // Rendre le header visuellement cliquable
+    header.classList.add('clickable');
+    header.style.cursor = 'pointer';
+    
+    // S'assurer que le reste de la carte n'a pas le curseur pointer
+    card.style.cursor = 'default';
     
     // Note: La restauration de l'état se fait dans restoreExpandedCards() après l'affichage de toutes les cartes
     // pour éviter les conflits et assurer une restauration cohérente
@@ -1137,30 +1138,29 @@ async function loadResponsiblesData(card, activity, container) {
         if (response.success && response.data) {
             const responsibles = response.data.responsibles || [];
             
-            if (responsibles.length === 0) {
-                container.innerHTML = '<p class="no-content-message">Aucun responsable assigné</p>';
-            } else {
-                // Créer la liste des responsables avec les classes CSS partagées
-                const responsiblesList = document.createElement('div');
-                responsiblesList.className = 'content-cards-container content-cards-container--nested';
-                
-                // Trier les responsables par date de début
+            const responsiblesList = document.createElement('div');
+            responsiblesList.className = 'content-cards-container content-cards-container--nested';
+            
+            if (responsibles.length > 0) {
                 const sortedResponsibles = [...responsibles].sort((a, b) => {
                     if (!a.start_date) return 1;
                     if (!b.start_date) return -1;
                     return new Date(a.start_date) - new Date(b.start_date);
                 });
-                
                 sortedResponsibles.forEach(responsible => {
-                    const responsibleItem = createResponsibleCardItem(responsible);
+                    // On passe l'id d'activité à la carte de responsable
+                    const responsibleItem = createResponsibleCardItem({ ...responsible, activity: activity.id });
                     responsiblesList.appendChild(responsibleItem);
                 });
-                
-                container.innerHTML = '';
-                container.appendChild(responsiblesList);
             }
             
-            // Marquer comme chargé
+            // Ajouter la carte "Ajouter un.e responsable" à la fin
+            const addResponsibleCard = createAddResponsibleCard(activity);
+            responsiblesList.appendChild(addResponsibleCard);
+            
+            container.innerHTML = '';
+            container.appendChild(responsiblesList);
+            
             card.dataset.responsiblesLoaded = 'true';
             
         } else {
@@ -1218,6 +1218,7 @@ async function loadTasksData(card, activity, container) {
 function createResponsibleCardItem(responsible) {
     const item = document.createElement('div');
     item.className = 'content-card content-card--subgroup content-card--nested';
+    item.classList.add('clickable');
     
     // En-tête de la carte avec nom et période
     const header = document.createElement('div');
@@ -1235,7 +1236,46 @@ function createResponsibleCardItem(responsible) {
     header.appendChild(period);
     item.appendChild(header);
     
+    // Forcer les coins arrondis en bas sur le header
+    header.style.borderRadius = 'var(--border-radius)';
+    
+    // Événement de clic pour ouvrir le modal d'édition
+    item.addEventListener('click', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        handleResponsibleCardClick(responsible);
+    });
+    
     return item;
+}
+
+/**
+ * Créer la carte "Ajouter un.e responsable"
+ */
+function createAddResponsibleCard(activity) {
+    const card = document.createElement('div');
+    card.className = 'content-card content-card--create-new';
+    card.classList.add('clickable');
+
+    // En-tête de la carte
+    const header = document.createElement('div');
+    header.className = 'content-card-header';
+
+    const title = document.createElement('div');
+    title.className = 'content-card-title';
+    title.textContent = '➕ Ajouter un.e responsable';
+
+    header.appendChild(title);
+    card.appendChild(header);
+
+    // Événement de clic pour ajouter un nouveau responsable
+    card.addEventListener('click', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        handleAddResponsibleClick(activity);
+    });
+
+    return card;
 }
 
 /**
@@ -1269,6 +1309,134 @@ async function getActivityTasks(activityId, dateStr) {
         console.error('Erreur lors de la récupération des tâches:', error);
         return [];
     }
+}
+
+/**
+ * Gérer le clic sur une carte de responsable
+ * @param {Object} responsible - Données du responsable
+ */
+function handleResponsibleCardClick(responsible) {
+    console.log('Clic sur la carte du responsable:', responsible);
+    
+    // Ouvrir le modal d'édition avec le nouveau formulaire
+    showEditAssignmentModal(responsible, 
+        // Callback de sauvegarde
+        async (assignment, formData) => {
+            console.log('Sauvegarde de l\'assignation:', formData);
+            
+            // Valider les données
+            const validation = validateAssignmentForm(formData);
+            if (!validation.isValid) {
+                showMessage('Erreur de validation: ' + validation.errors.join(', '), 'error');
+                return;
+            }
+            
+            try {
+                // Utiliser la nouvelle fonction saveResponsibility
+                const result = await saveResponsibility(assignment, formData);
+                console.log('Résultat de la sauvegarde:', result);
+                showMessage('Responsabilité mise à jour avec succès', 'success');
+                
+                // Recharger les données de la carte d'activité après sauvegarde
+                const activityCard = document.querySelector(`[data-activity-id="${responsible.activity}"]`);
+                if (activityCard) {
+                    const detailsContent = activityCard.querySelector('.activity-details-content');
+                    if (detailsContent) {
+                        // Recharger les responsables
+                        const responsiblesContent = detailsContent.querySelector('#responsibles-tab-content');
+                        if (responsiblesContent) {
+                            // Réinitialiser le flag pour forcer le rechargement
+                            activityCard.dataset.responsiblesLoaded = 'false';
+                            loadResponsiblesData(activityCard, { id: responsible.activity }, responsiblesContent);
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Erreur lors de la sauvegarde:', error);
+                showMessage('Erreur lors de la sauvegarde: ' + error.message, 'error');
+            }
+        },
+        // Callback de suppression
+        async (assignment) => {
+            console.log('Suppression de l\'assignation:', assignment);
+            
+            // Recharger les données de la carte d'activité après suppression
+            const activityCard = document.querySelector(`[data-activity-id="${responsible.activity}"]`);
+            if (activityCard) {
+                const detailsContent = activityCard.querySelector('.activity-details-content');
+                if (detailsContent) {
+                    // Recharger les responsables
+                    const responsiblesContent = detailsContent.querySelector('#responsibles-tab-content');
+                    if (responsiblesContent) {
+                        // Réinitialiser le flag pour forcer le rechargement
+                        activityCard.dataset.responsiblesLoaded = 'false';
+                        loadResponsiblesData(activityCard, { id: responsible.activity }, responsiblesContent);
+                    }
+                }
+            }
+        }
+    );
+}
+
+/**
+ * Gérer le clic sur la carte "Ajouter un.e responsable"
+ * @param {Object} activity - Données de l'activité
+ */
+function handleAddResponsibleClick(activity) {
+    console.log('Clic sur "Ajouter un.e responsable" pour l\'activité:', activity);
+    
+    // Créer un objet responsable vide pour l'ajout
+    const newResponsible = {
+        activity: activity.id,
+        responsible_id: null,
+        start_date: null,
+        end_date: null,
+        is_new: true
+    };
+    
+    // Ouvrir le modal d'édition avec le nouveau formulaire
+    showEditAssignmentModal(newResponsible, 
+        // Callback de sauvegarde
+        async (assignment, formData) => {
+            console.log('Sauvegarde du nouveau responsable:', formData);
+            
+            // Valider les données
+            const validation = validateAssignmentForm(formData);
+            if (!validation.isValid) {
+                showMessage('Erreur de validation: ' + validation.errors.join(', '), 'error');
+                return;
+            }
+            
+            try {
+                // Utiliser la nouvelle fonction saveResponsibility
+                const result = await saveResponsibility(assignment, formData);
+                console.log('Résultat de la sauvegarde:', result);
+                showMessage('Responsable ajouté avec succès', 'success');
+                
+                // Recharger les données de la carte d'activité après sauvegarde
+                const activityCard = document.querySelector(`[data-activity-id="${activity.id}"]`);
+                if (activityCard) {
+                    const detailsContent = activityCard.querySelector('.activity-details-content');
+                    if (detailsContent) {
+                        // Recharger les responsables
+                        const responsiblesContent = detailsContent.querySelector('#responsibles-tab-content');
+                        if (responsiblesContent) {
+                            // Réinitialiser le flag pour forcer le rechargement
+                            activityCard.dataset.responsiblesLoaded = 'false';
+                            loadResponsiblesData(activityCard, activity, responsiblesContent);
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Erreur lors de la sauvegarde:', error);
+                showMessage('Erreur lors de la sauvegarde: ' + error.message, 'error');
+            }
+        },
+        // Callback de suppression (non utilisé pour l'ajout)
+        async (assignment) => {
+            console.log('Suppression annulée pour un nouveau responsable');
+        }
+    );
 }
 
 /**
@@ -1410,3 +1578,9 @@ window.diagnoseCssIssues = function() {
         console.log(`Cette carte est ${isTopElement ? 'au premier plan' : 'couverte par d\'autres éléments'}`);
     });
 };
+
+// Fonction de test du modal d'édition des responsables
+// window.testResponsibleModal = function() {
+//     console.log('%cTEST DU MODAL D\'ÉDITION DES RESPONSABLES', 'background: green; color: white; font-size: 18px; font-weight: bold;');
+//     testResponsibleEditModal();
+// };

@@ -14,11 +14,6 @@ alwaysApply: false
 - **Pages** : [apps/responsibilities/pages/](mdc:apps/responsibilities/pages/)
 - **Documentation** : [apps/responsibilities/README.md](mdc:apps/responsibilities/README.md)
 
-### Application Admin ([apps/admin/](mdc:apps/admin/))
-- **Interface d'administration** : Gestion des utilisateurs et configurations
-- **Scripts** : [apps/admin/scripts/](mdc:apps/admin/scripts/)
-- **Styles** : [apps/admin/css/](mdc:apps/admin/css/)
-
 ## Modules partagés ([modules/](mdc:modules/))
 
 ### Composants UI ([modules/components/](mdc:modules/components/))
@@ -43,6 +38,10 @@ alwaysApply: false
 - **CSS principal** : [shared/css/](mdc:shared/css/) - Styles de base et composants
 - **En-tête** : [shared/app-header.css](mdc:shared/app-header.css) - Styles de l'en-tête
 - **Import** : `<link rel="stylesheet" href="../../shared/style.css">`
+
+Utiliser les styles partagés autant que possible pour les nouveaux composants ou éléments d'interface des applications et des vues.
+Ne jamais crée de style supplémentaire spontanément mais UNIQUEMENT sur demande.
+Si besoin de styles supplémentaires, rapportez cette information dans le chat pour qu'elle soit traiter ultérieurement.
 
 ### Client API
 - **Client API** : [shared/api-client.js](mdc:shared/api-client.js) - Fonctions d'appel API

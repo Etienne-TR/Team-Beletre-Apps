@@ -26,6 +26,22 @@ class GlobalRepository extends BaseRepository {
     }
     
     /**
+     * Récupérer la liste des utilisateurs actifs
+     */
+    public function getUsers() {
+        $sql = "
+            SELECT id, display_name, email, initials
+            FROM users
+            WHERE status = 'active'
+            ORDER BY display_name, email
+        ";
+        
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+    
+    /**
      * Récupérer les données de responsabilités pour une date donnée
      */
     public function getResponsibilitiesData($targetDate, $typeFilter = null) {

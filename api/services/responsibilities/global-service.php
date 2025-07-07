@@ -34,6 +34,18 @@ class GlobalService {
     }
     
     /**
+     * Récupérer la liste des utilisateurs actifs
+     */
+    public function getUsers() {
+        $users = $this->repository->getUsers();
+        
+        return [
+            'users' => $users,
+            'total_count' => count($users)
+        ];
+    }
+    
+    /**
      * Récupérer le tableau de synthèse des responsabilités
      */
     public function getResponsibilities($dateFilter, $typeFilter = null) {

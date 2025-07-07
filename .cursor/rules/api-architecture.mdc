@@ -34,6 +34,42 @@ L'API suit une architecture avec séparation claire des responsabilités.
 - **Validation** : [api/utils/responsibilities/validator.php](mdc:api/utils/responsibilities/validator.php)
 - **Helpers** : [api/utils/responsibilities/helpers.php](mdc:api/utils/responsibilities/helpers.php)
 
+## Tables avec versionning et tables sans versionning
+
+### Avec versionnig
+Par exemple : activities, responsible_for
+- Entrée dont on enregistre des versions : entry
+- Clé primaire auto-incrémentée : version
+- Nom des fonctions CRUD : create, getCurrent, revise, deprecate
+- Définies dans /api/repositories/common/versionning-reporitory.php
+
+Lors de la création d'une nouvelle entry, la valeur de version est utilisée pour définir la valeur de entry. Un trigger en base de donnée s'en occcupe. Par exemple :
+```sql
+DELIMITER $$
+CREATE TRIGGER responsible_for_insert_entry
+BEFORE INSERT ON responsible_for
+FOR EACH ROW
+BEGIN
+    IF NEW.entry IS NULL THEN
+        SET NEW.entry = NEW.version;
+    END IF;
+END$$
+DELIMITER ;
+
+INSERT INTO responsible_for (created_by, user, activity, start_date, end_date)
+VALUES (1, 5, 10, '2025-01-01', '2025-12-31');
+```
+Les contrôleurs retourne systématiquement les champs version, entry, status, created_by, created_at
+
+### Sans versionning
+Par exemple : users, user_sessions
+- Clé primaire : id
+- Nom des fonction CRUD : create, read, udpate, delete
+- Définies dans /api/repositories/common/base-reporitory.php
+
+Factorisation :
+- une partie des fonctions de base-repository.php peuvent être héritées par celles de versionning-reporitory.php en redéfinissant la clé primaire en <version> à la place de <id>.
+
 ## Flux de données
 ```
 HTTP Request → Contrôleur → Service → Repository → Database
