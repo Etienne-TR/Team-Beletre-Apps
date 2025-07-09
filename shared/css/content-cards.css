@@ -405,8 +405,8 @@
 /* Carte de sous-groupe avec styles compacts */
 .content-card--subgroup {
     /* Bordure et espacement réduits */
-    border-width: calc(var(--border-width-fine) * 0.75);
-    border-radius: calc(var(--border-radius) * 0.75);
+    border-width: calc(var(--border-width-fine));
+    border-radius: calc(var(--border-radius));
     
     /* Ombre plus subtile */
     box-shadow: var(--shadow-light);
@@ -424,17 +424,33 @@
 
 /* En-tête compact pour les sous-groupes */
 .content-card--subgroup .content-card-header {
-    padding: calc(var(--gap-medium) * 0.75);
-    gap: calc(var(--gap-medium) * 0.75);
+    padding: calc(var(--gap-medium));
+    gap: calc(var(--gap-medium));
 }
 
 /* Corps compact pour les sous-groupes */
 .content-card--subgroup .content-card-body {
-    padding: calc(var(--gap-large) * 0.75);
+    padding: calc(var(--gap-large));
+    padding-top: 0;
 }
 
 /* Pied compact pour les sous-groupes */
 .content-card--subgroup .content-card-footer {
-    padding: calc(var(--gap-large) * 0.75);
-    padding-top: calc(var(--gap-medium) * 0.75);
+    padding: calc(var(--gap-large));
+    padding-top: calc(var(--gap-medium));
+}
+
+/* ========================================
+   CARTES DE TÂCHES - COINS ARRONDIS
+   ======================================== */
+
+/* Quand une carte de tâche est collapsed (non étendue), l'en-tête a des coins arrondis en bas */
+.content-card--subgroup:not(.expanded) .content-card-header {
+    border-radius: calc(var(--border-radius));
+    border-bottom: none;
+}
+
+/* Quand une carte de tâche est expanded, l'en-tête garde ses coins arrondis en haut seulement */
+.content-card--subgroup.expanded .content-card-header {
+    border-radius: calc(var(--border-radius)) calc(var(--border-radius)) 0 0;
 }

@@ -28,7 +28,10 @@ import {
     removeEventListener
 } from '/modules/store/responsibilities.js';
 import { formatDateForAPI, formatPeriodLiterary } from '/modules/utils/date-utils.js';
-import { showEditAssignmentModal, validateAssignmentForm, saveResponsibility } from './edit-assigned-to.js';
+import { showReviseResponsibleForModal, validateReviseResponsibleForForm, saveResponsibility } from './revise-responsible-for.js';
+import { showReviseAssignedToModal, validateReviseAssignedToForm, saveAssignment } from './revise-assigned-to.js';
+import { showCreateResponsibleForModal, validateCreateResponsibleForForm, createResponsibleFor, loadAvailableUsers } from './create-responsible-for.js';
+import { showCreateAssignedToModal, loadAvailableUsers as loadAvailableUsersForAssignment } from './create-assigned-to.js';
 
 // Variables globales
 let availableTypes = [];
@@ -272,15 +275,15 @@ function setupExpandedActivityCardChangeListener() {
                             console.log('loadCardData - cardId:', cardId, 'type:', typeof cardId);
                             console.log('loadCardData - activities:', activities);
                             
-                            // Afficher les IDs des activités pour debug
-                            console.log('loadCardData - IDs des activités:');
+                            // Afficher les entries des activités pour debug
+                            console.log('loadCardData - Entries des activités:');
                             activities.forEach((a, index) => {
-                                console.log(`  [${index}] id: ${a.id} (type: ${typeof a.id})`);
+                                console.log(`  [${index}] entry: ${a.entry} (type: ${typeof a.entry})`);
                             });
                             
-                            // Recherche directe de l'activité (IDs maintenant cohérents)
+                            // Recherche directe de l'activité (entries maintenant cohérents)
                             // Convertir cardId en nombre pour la comparaison
-                            const activity = activities.find(a => a.id === Number(cardId));
+                            const activity = activities.find(a => a.entry === Number(cardId));
                             
                             console.log('loadCardData - activity trouvée:', activity);
                             console.log('loadCardData - targetCard.dataset.responsiblesLoaded:', targetCard.dataset.responsiblesLoaded);
@@ -339,9 +342,9 @@ function restoreExpandedCards() {
                         const loadCardData = () => {
                             console.log('restoreExpandedCards - expandedActivityId:', expandedActivityId, 'type:', typeof expandedActivityId);
                             
-                            // Recherche directe de l'activité (IDs maintenant cohérents)
+                            // Recherche directe de l'activité (entries maintenant cohérents)
                             // Convertir expandedActivityId en nombre pour la comparaison
-                            const activity = activities.find(a => a.id === Number(expandedActivityId));
+                            const activity = activities.find(a => a.entry === Number(expandedActivityId));
                             
                             if (activity) {
                                 console.log('restoreExpandedCards - Activité trouvée, chargement des responsables');
@@ -357,7 +360,7 @@ function restoreExpandedCards() {
                 }
             } else {
                 console.log('Carte d\'activité non trouvée dans cette vue - l\'activité n\'existe pas dans ce type');
-                console.log('Activités disponibles dans ce type:', activities.map(a => a.id));
+                console.log('Activités disponibles dans ce type:', activities.map(a => a.entry));
                 // Ne pas effacer l'état du store ici - l'activité pourrait exister dans un autre type
             }
         }
@@ -377,9 +380,9 @@ function restoreExpandedCards() {
                 taskItem.classList.add('expanded');
                 
                 // Charger les assignations si pas encore fait
-                const assignedList = expandableContent.querySelector('.assigned-workers-list');
-                if (assignedList && !taskItem.dataset.assignmentsLoaded) {
-                    loadTaskAssignments(expandedTaskId, assignedList);
+                const assignmentsContainer = expandableContent.querySelector('.content-cards-container');
+                if (assignmentsContainer && !taskItem.dataset.assignmentsLoaded) {
+                    loadTaskAssignments(expandedTaskId, assignmentsContainer);
                     taskItem.dataset.assignmentsLoaded = 'true';
                 }
             }
@@ -897,7 +900,7 @@ function createNewActivityCard() {
 function createActivityCard(activity, options = {}) {
     const card = document.createElement('div');
     card.className = 'content-card';
-    card.dataset.activityId = activity.id;
+    card.dataset.activityId = activity.entry;
 
     // En-tête de la carte (nom à gauche, dates à droite)
     const header = document.createElement('div');
@@ -930,7 +933,29 @@ function createActivityCard(activity, options = {}) {
     // Description de l'activité (en haut du corps)
     const description = document.createElement('div');
     description.className = 'activity-description-in-card';
-    description.textContent = activity.description || 'Aucune description';
+    description.style.marginBottom = 'var(--gap-medium)';
+    
+    // Zone cliquable contenant le texte
+    const clickableArea = document.createElement('span');
+    clickableArea.style.cursor = 'pointer';
+    clickableArea.textContent = activity.description || 'Aucune description disponible';
+    
+    // Effet souligné au survol
+    clickableArea.addEventListener('mouseenter', () => {
+        clickableArea.style.textDecoration = 'underline';
+    });
+    
+    clickableArea.addEventListener('mouseleave', () => {
+        clickableArea.style.textDecoration = 'none';
+    });
+    
+    clickableArea.addEventListener('click', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        handleEditActivityClick(activity);
+    });
+    
+    description.appendChild(clickableArea);
     body.appendChild(description);
     
     // Conteneur pour les responsables et tâches
@@ -977,7 +1002,7 @@ async function toggleActivityCard(card, activity, detailsContent) {
     // Vérifier si la carte est actuellement visuellement ouverte
     const isCurrentlyExpanded = card.classList.contains('expanded');
     
-    if (currentExpandedCardId === activity.id || isCurrentlyExpanded) {
+    if (currentExpandedCardId === activity.entry || isCurrentlyExpanded) {
         // Réduire la carte (soit elle est dans le store, soit elle est visuellement ouverte)
         if (body) {
             body.classList.remove('content-card-body--expanded');
@@ -1001,7 +1026,7 @@ async function toggleActivityCard(card, activity, detailsContent) {
         }
         
         // Déplier la carte en mettant à jour le store
-        setExpandedActivityCard(activity.id);
+        setExpandedActivityCard(activity.entry);
     }
 }
 
@@ -1009,8 +1034,8 @@ async function toggleActivityCard(card, activity, detailsContent) {
  * Charger les responsables pour une carte spécifique
  */
 async function loadResponsiblesForCard(card, activity, detailsContent, autoLoadFirstTab = false) {
-    // Vérifier que l'activité existe et a un ID
-    if (!activity || !activity.id) {
+    // Vérifier que l'activité existe et a un entry
+    if (!activity || !activity.entry) {
         console.error('Activité invalide ou manquante dans loadResponsiblesForCard:', activity);
         detailsContent.innerHTML = '<p class="error-state">Erreur: Activité invalide</p>';
         return;
@@ -1116,17 +1141,17 @@ async function loadResponsiblesData(card, activity, container) {
     try {
         console.log('loadResponsiblesData - Début de la fonction');
         console.log('loadResponsiblesData - activity:', activity);
-        console.log('loadResponsiblesData - activity.id:', activity?.id);
+        console.log('loadResponsiblesData - activity.entry:', activity?.entry);
         
-        // Vérifier que l'activité existe et a un ID
-        if (!activity || !activity.id) {
+        // Vérifier que l'activité existe et a un entry
+        if (!activity || !activity.entry) {
             console.error('Activité invalide ou manquante:', activity);
             container.innerHTML = '<p class="error-state">Erreur: Activité invalide</p>';
             return;
         }
         
         const dateStr = getSelectedDate();
-        const url = `../../api/controllers/responsibilities/activity-controller.php?action=get_responsible_for&activity=${activity.id}&date=${dateStr}`;
+        const url = `../../api/controllers/responsibilities/responsible-for-controller.php?action=listFromDate&activity=${activity.entry}&date=${dateStr}`;
         
         console.log('loadResponsiblesData - URL de la requête:', url);
         console.log('loadResponsiblesData - Envoi de la requête HTTP...');
@@ -1148,8 +1173,8 @@ async function loadResponsiblesData(card, activity, container) {
                     return new Date(a.start_date) - new Date(b.start_date);
                 });
                 sortedResponsibles.forEach(responsible => {
-                    // On passe l'id d'activité à la carte de responsable
-                    const responsibleItem = createResponsibleCardItem({ ...responsible, activity: activity.id });
+                    // On passe l'entry d'activité à la carte de responsable
+                    const responsibleItem = createResponsibleCardItem({ ...responsible, activity: activity.entry });
                     responsiblesList.appendChild(responsibleItem);
                 });
             }
@@ -1178,30 +1203,32 @@ async function loadResponsiblesData(card, activity, container) {
  */
 async function loadTasksData(card, activity, container) {
     try {
-        // Vérifier que l'activité existe et a un ID
-        if (!activity || !activity.id) {
+        // Vérifier que l'activité existe et a un entry
+        if (!activity || !activity.entry) {
             console.error('Activité invalide ou manquante:', activity);
             container.innerHTML = '<p class="error-state">Erreur: Activité invalide</p>';
             return;
         }
         
         const dateStr = getSelectedDate();
-        const tasks = await getActivityTasks(activity.id, dateStr);
+        const tasks = await getActivityTasksFromDate(activity.entry, dateStr);
         
-        if (!tasks || tasks.length === 0) {
-            container.innerHTML = '<p class="no-content-message">Aucune tâche associée</p>';
-        } else {
-            const tasksList = document.createElement('div');
-            tasksList.className = 'content-cards-container content-cards-container--nested';
-            
+        const tasksList = document.createElement('div');
+        tasksList.className = 'content-cards-container content-cards-container--nested';
+        
+        if (tasks && tasks.length > 0) {
             tasks.forEach(task => {
                 const item = createTaskViewItem(task);
                 tasksList.appendChild(item);
             });
-            
-            container.innerHTML = '';
-            container.appendChild(tasksList);
         }
+        
+        // Ajouter la carte "Ajouter une tâche" à la fin
+        const addTaskCard = createAddTaskCard(activity);
+        tasksList.appendChild(addTaskCard);
+        
+        container.innerHTML = '';
+        container.appendChild(tasksList);
         
         // Marquer comme chargé
         card.dataset.tasksLoaded = 'true';
@@ -1254,12 +1281,12 @@ function createResponsibleCardItem(responsible) {
  */
 function createAddResponsibleCard(activity) {
     const card = document.createElement('div');
-    card.className = 'content-card content-card--create-new';
+    card.className = 'content-card content-card--subgroup content-card--nested content-card--create-new';
     card.classList.add('clickable');
 
     // En-tête de la carte
     const header = document.createElement('div');
-    header.className = 'content-card-header';
+    header.className = 'content-card-header content-card--nested';
 
     const title = document.createElement('div');
     title.className = 'content-card-title';
@@ -1279,6 +1306,64 @@ function createAddResponsibleCard(activity) {
 }
 
 /**
+ * Créer la carte "Ajouter une tâche"
+ */
+function createAddTaskCard(activity) {
+    const card = document.createElement('div');
+    card.className = 'content-card content-card--subgroup content-card--nested content-card--create-new';
+    card.classList.add('clickable');
+
+    // En-tête de la carte
+    const header = document.createElement('div');
+    header.className = 'content-card-header content-card--nested';
+
+    const title = document.createElement('div');
+    title.className = 'content-card-title';
+    title.textContent = '➕ Ajouter une tâche';
+
+    header.appendChild(title);
+    card.appendChild(header);
+
+    // Événement de clic pour ajouter une nouvelle tâche
+    card.addEventListener('click', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        handleAddTaskClick(activity);
+    });
+
+    return card;
+}
+
+/**
+ * Créer la carte "Ajouter un.e travailleur.se"
+ */
+function createAddWorkerCard(task) {
+    const card = document.createElement('div');
+    card.className = 'content-card content-card--subgroup content-card--nested content-card--create-new';
+    card.classList.add('clickable');
+
+    // En-tête de la carte
+    const header = document.createElement('div');
+    header.className = 'content-card-header content-card--nested';
+
+    const title = document.createElement('div');
+    title.className = 'content-card-title';
+    title.textContent = '➕ Ajouter un.e travailleur.se';
+
+    header.appendChild(title);
+    card.appendChild(header);
+
+    // Événement de clic pour ajouter un nouveau travailleur
+    card.addEventListener('click', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        handleAddWorkerClick(task);
+    });
+
+    return card;
+}
+
+/**
  * Charger les assignations d'une tâche
  * @param {string} taskId - ID de la tâche
  * @param {HTMLElement} container - Conteneur pour afficher les assignations
@@ -1286,8 +1371,34 @@ function createAddResponsibleCard(activity) {
 async function loadTaskAssignments(taskId, container) {
     try {
         console.log('Chargement des assignations pour la tâche:', taskId);
-        // TODO: Implémenter le chargement des assignations
-        container.innerHTML = '<p class="no-content-message">Fonctionnalité en cours de développement</p>';
+        
+        const dateStr = getSelectedDate();
+        const url = `../../api/controllers/responsibilities/assigned-to-controller.php?action=listFromDate&task=${taskId}&date=${dateStr}`;
+        console.log('URL de la requête API pour les assignations:', url);
+        
+        const response = await apiRequest(url);
+        console.log('Réponse API loadTaskAssignments:', response);
+        
+        if (response.success && response.data && response.data.assigned) {
+            const assigned = response.data.assigned;
+            
+            container.innerHTML = '';
+            
+            if (assigned.length > 0) {
+                assigned.forEach(assignment => {
+                    const assignedItem = createAssignedWorkerItem(assignment);
+                    container.appendChild(assignedItem);
+                });
+            }
+            
+            // Ajouter la carte "Ajouter un.e travailleur.se" à la fin
+            const addWorkerCard = createAddWorkerCard({ task_id: taskId });
+            container.appendChild(addWorkerCard);
+            
+        } else {
+            container.innerHTML = '<p class="no-content-message">Aucune assignation trouvée</p>';
+        }
+        
     } catch (error) {
         console.error('Erreur lors du chargement des assignations:', error);
         container.innerHTML = '<p class="error-state">Erreur lors du chargement des assignations</p>';
@@ -1295,16 +1406,30 @@ async function loadTaskAssignments(taskId, container) {
 }
 
 /**
- * Récupérer les tâches d'une activité
+ * Récupérer les tâches d'une activité actives à partir d'une date donnée
  * @param {string} activityId - ID de l'activité
- * @param {string} dateStr - Date au format string
- * @returns {Array} Liste des tâches
+ * @param {string} dateStr - Date au format string (YYYY-MM-DD)
+ * @returns {Array} Liste des tâches actives à partir de cette date (en cours et futures)
  */
-async function getActivityTasks(activityId, dateStr) {
+async function getActivityTasksFromDate(activityId, dateStr) {
     try {
-        console.log('Récupération des tâches pour l\'activité:', activityId);
-        // TODO: Implémenter la récupération des tâches
-        return [];
+        console.log('Récupération des tâches pour l\'activité:', activityId, 'à partir de la date:', dateStr);
+        
+        // Appel API pour récupérer les tâches de l'activité
+        const url = `../../api/controllers/responsibilities/activity-controller.php?action=get_activity_tasks&activity=${activityId}&date=${dateStr}`;
+        console.log('URL de la requête API:', url);
+        
+        const response = await apiRequest(url);
+        console.log('Réponse API getActivityTasksFromDate:', response);
+        
+        if (response.success && response.data && response.data.tasks) {
+            console.log(`${response.data.tasks.length} tâches récupérées pour l'activité ${activityId}`);
+            return response.data.tasks;
+        } else {
+            console.warn('Aucune tâche trouvée ou structure de réponse invalide:', response);
+            return [];
+        }
+        
     } catch (error) {
         console.error('Erreur lors de la récupération des tâches:', error);
         return [];
@@ -1319,13 +1444,13 @@ function handleResponsibleCardClick(responsible) {
     console.log('Clic sur la carte du responsable:', responsible);
     
     // Ouvrir le modal d'édition avec le nouveau formulaire
-    showEditAssignmentModal(responsible, 
+    showReviseResponsibleForModal(responsible, 
         // Callback de sauvegarde
         async (assignment, formData) => {
             console.log('Sauvegarde de l\'assignation:', formData);
             
             // Valider les données
-            const validation = validateAssignmentForm(formData);
+            const validation = validateReviseResponsibleForForm(formData);
             if (!validation.isValid) {
                 showMessage('Erreur de validation: ' + validation.errors.join(', '), 'error');
                 return;
@@ -1347,7 +1472,13 @@ function handleResponsibleCardClick(responsible) {
                         if (responsiblesContent) {
                             // Réinitialiser le flag pour forcer le rechargement
                             activityCard.dataset.responsiblesLoaded = 'false';
-                            loadResponsiblesData(activityCard, { id: responsible.activity }, responsiblesContent);
+                            // Trouver l'activité complète dans le tableau activities
+                            const activity = activities.find(a => a.entry === responsible.activity);
+                            if (activity) {
+                                loadResponsiblesData(activityCard, activity, responsiblesContent);
+                            } else {
+                                console.error('Activité non trouvée pour le rechargement:', responsible.activity);
+                            }
                         }
                     }
                 }
@@ -1370,7 +1501,13 @@ function handleResponsibleCardClick(responsible) {
                     if (responsiblesContent) {
                         // Réinitialiser le flag pour forcer le rechargement
                         activityCard.dataset.responsiblesLoaded = 'false';
-                        loadResponsiblesData(activityCard, { id: responsible.activity }, responsiblesContent);
+                        // Trouver l'activité complète dans le tableau activities
+                        const activity = activities.find(a => a.entry === responsible.activity);
+                        if (activity) {
+                            loadResponsiblesData(activityCard, activity, responsiblesContent);
+                        } else {
+                            console.error('Activité non trouvée pour le rechargement:', responsible.activity);
+                        }
                     }
                 }
             }
@@ -1379,64 +1516,275 @@ function handleResponsibleCardClick(responsible) {
 }
 
 /**
- * Gérer le clic sur la carte "Ajouter un.e responsable"
- * @param {Object} activity - Données de l'activité
+ * Gérer le clic sur une carte de personne assignée à une tâche
+ * @param {Object} assignment - Données de l'assignation
  */
-function handleAddResponsibleClick(activity) {
-    console.log('Clic sur "Ajouter un.e responsable" pour l\'activité:', activity);
+function handleAssignedWorkerCardClick(assignment) {
+    console.log('=== DÉBUT handleAssignedWorkerCardClick ===');
+    console.log('[handleAssignedWorkerCardClick] Assignment reçu:', JSON.stringify(assignment, null, 2));
     
-    // Créer un objet responsable vide pour l'ajout
-    const newResponsible = {
-        activity: activity.id,
-        responsible_id: null,
-        start_date: null,
-        end_date: null,
-        is_new: true
-    };
+    // Vérifier les propriétés disponibles dans assignment
+    console.log('[handleAssignedWorkerCardClick] Propriétés de assignment:');
+    console.log('  - activity:', assignment.activity);
+    console.log('  - assigned_user_id:', assignment.assigned_user_id);
+    console.log('  - user_id:', assignment.user_id);
+    console.log('  - task:', assignment.task);
+    console.log('  - task_id:', assignment.task_id);
+    console.log('  - version:', assignment.version);
+    console.log('  - entry:', assignment.entry);
+    console.log('  - start_date:', assignment.start_date);
+    console.log('  - end_date:', assignment.end_date);
     
     // Ouvrir le modal d'édition avec le nouveau formulaire
-    showEditAssignmentModal(newResponsible, 
+    console.log('[handleAssignedWorkerCardClick] Ouverture du modal showReviseAssignedToModal...');
+    showReviseAssignedToModal(assignment, 
         // Callback de sauvegarde
         async (assignment, formData) => {
-            console.log('Sauvegarde du nouveau responsable:', formData);
+            console.log('=== DÉBUT CALLBACK SAUVEGARDE ===');
+            console.log('[handleAssignedWorkerCardClick] Sauvegarde de l\'assignation:', JSON.stringify(formData, null, 2));
+            console.log('[handleAssignedWorkerCardClick] Assignment dans callback:', JSON.stringify(assignment, null, 2));
             
             // Valider les données
-            const validation = validateAssignmentForm(formData);
+            console.log('[handleAssignedWorkerCardClick] Validation des données...');
+            const validation = validateReviseAssignedToForm(formData);
+            console.log('[handleAssignedWorkerCardClick] Résultat validation:', validation);
+            
             if (!validation.isValid) {
+                console.error('[handleAssignedWorkerCardClick] ❌ Erreur de validation:', validation.errors);
                 showMessage('Erreur de validation: ' + validation.errors.join(', '), 'error');
                 return;
             }
             
             try {
-                // Utiliser la nouvelle fonction saveResponsibility
-                const result = await saveResponsibility(assignment, formData);
-                console.log('Résultat de la sauvegarde:', result);
-                showMessage('Responsable ajouté avec succès', 'success');
+                console.log('[handleAssignedWorkerCardClick] Appel de saveAssignment...');
+                // Utiliser la nouvelle fonction saveAssignment
+                const result = await saveAssignment(assignment, formData);
+                console.log('[handleAssignedWorkerCardClick] ✅ Résultat de la sauvegarde:', JSON.stringify(result, null, 2));
+                showMessage('Assignation mise à jour avec succès', 'success');
                 
-                // Recharger les données de la carte d'activité après sauvegarde
-                const activityCard = document.querySelector(`[data-activity-id="${activity.id}"]`);
-                if (activityCard) {
-                    const detailsContent = activityCard.querySelector('.activity-details-content');
-                    if (detailsContent) {
-                        // Recharger les responsables
-                        const responsiblesContent = detailsContent.querySelector('#responsibles-tab-content');
-                        if (responsiblesContent) {
-                            // Réinitialiser le flag pour forcer le rechargement
-                            activityCard.dataset.responsiblesLoaded = 'false';
-                            loadResponsiblesData(activityCard, activity, responsiblesContent);
-                        }
+                // Recharger les assignations de la tâche après sauvegarde
+                console.log('[handleAssignedWorkerCardClick] Rechargement des assignations...');
+                const taskId = assignment.task || assignment.task_id;
+                console.log('[handleAssignedWorkerCardClick] Task ID pour rechargement:', taskId);
+                
+                const taskCard = document.querySelector(`[data-task-id="${taskId}"]`);
+                console.log('[handleAssignedWorkerCardClick] Task card trouvée:', !!taskCard);
+                
+                if (taskCard) {
+                    const assignmentsContainer = taskCard.querySelector('.content-cards-container');
+                    console.log('[handleAssignedWorkerCardClick] Assignments container trouvé:', !!assignmentsContainer);
+                    
+                    if (assignmentsContainer) {
+                        console.log('[handleAssignedWorkerCardClick] Appel de loadTaskAssignments...');
+                        await loadTaskAssignments(taskId, assignmentsContainer);
+                        console.log('[handleAssignedWorkerCardClick] ✅ Assignations rechargées');
                     }
                 }
+                console.log('=== FIN CALLBACK SAUVEGARDE ===');
             } catch (error) {
-                console.error('Erreur lors de la sauvegarde:', error);
+                console.error('=== ERREUR CALLBACK SAUVEGARDE ===');
+                console.error('[handleAssignedWorkerCardClick] ❌ Erreur lors de la sauvegarde:', error);
+                console.error('[handleAssignedWorkerCardClick] Message d\'erreur:', error.message);
+                console.error('[handleAssignedWorkerCardClick] Stack trace:', error.stack);
                 showMessage('Erreur lors de la sauvegarde: ' + error.message, 'error');
+                console.error('=== FIN ERREUR CALLBACK SAUVEGARDE ===');
             }
         },
-        // Callback de suppression (non utilisé pour l'ajout)
+        // Callback de suppression
         async (assignment) => {
-            console.log('Suppression annulée pour un nouveau responsable');
+            console.log('=== DÉBUT CALLBACK SUPPRESSION ===');
+            console.log('[handleAssignedWorkerCardClick] Suppression de l\'assignation:', JSON.stringify(assignment, null, 2));
+            
+            // Recharger les assignations de la tâche après suppression
+            console.log('[handleAssignedWorkerCardClick] Rechargement des assignations après suppression...');
+            const taskId = assignment.task || assignment.task_id;
+            console.log('[handleAssignedWorkerCardClick] Task ID pour rechargement:', taskId);
+            
+            const taskCard = document.querySelector(`[data-task-id="${taskId}"]`);
+            console.log('[handleAssignedWorkerCardClick] Task card trouvée:', !!taskCard);
+            
+            if (taskCard) {
+                const assignmentsContainer = taskCard.querySelector('.content-cards-container');
+                console.log('[handleAssignedWorkerCardClick] Assignments container trouvé:', !!assignmentsContainer);
+                
+                if (assignmentsContainer) {
+                    console.log('[handleAssignedWorkerCardClick] Appel de loadTaskAssignments...');
+                    await loadTaskAssignments(taskId, assignmentsContainer);
+                    console.log('[handleAssignedWorkerCardClick] ✅ Assignations rechargées après suppression');
+                }
+            }
+            console.log('=== FIN CALLBACK SUPPRESSION ===');
         }
     );
+    console.log('=== FIN handleAssignedWorkerCardClick ===');
+}
+
+/**
+ * Gérer le clic sur la carte "Ajouter un.e responsable"
+ * @param {Object} activity - Données de l'activité
+ */
+async function handleAddResponsibleClick(activity) {
+    console.log('Clic sur "Ajouter un.e responsable" pour l\'activité:', activity);
+    
+    try {
+        // Récupérer la date sélectionnée pour filtrer les travailleurs sous contrat
+        const selectedDate = getSelectedDate() || new Date().toISOString().split('T')[0];
+        console.log('Date sélectionnée pour le filtrage des travailleurs:', selectedDate);
+        
+        // Charger la liste des travailleurs sous contrat à cette date
+        const availableUsers = await loadAvailableUsers(selectedDate);
+        console.log('Travailleurs disponibles:', availableUsers);
+        
+        // Ouvrir le modal d'ajout avec le nouveau formulaire
+        showCreateResponsibleForModal(activity, availableUsers, 
+            // Callback de sauvegarde
+            async (activity, formData) => {
+                console.log('Sauvegarde du nouveau responsable:', formData);
+                
+                // Valider les données
+                const validation = validateCreateResponsibleForForm(formData);
+                if (!validation.isValid) {
+                    showMessage('Erreur de validation: ' + validation.errors.join(', '), 'error');
+                    return;
+                }
+                
+                try {
+                            // Utiliser la nouvelle fonction createResponsibleFor
+        const result = await createResponsibleFor(activity, formData);
+                    console.log('Résultat de l\'ajout:', result);
+                    showMessage('Responsable ajouté avec succès', 'success');
+                    
+                    // Recharger les données de la carte d'activité après sauvegarde
+                    const activityCard = document.querySelector(`[data-activity-id="${activity.entry}"]`);
+                    if (activityCard) {
+                        const detailsContent = activityCard.querySelector('.activity-details-content');
+                        if (detailsContent) {
+                            // Recharger les responsables
+                            const responsiblesContent = detailsContent.querySelector('#responsibles-tab-content');
+                            if (responsiblesContent) {
+                                // Réinitialiser le flag pour forcer le rechargement
+                                activityCard.dataset.responsiblesLoaded = 'false';
+                                loadResponsiblesData(activityCard, activity, responsiblesContent);
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error('Erreur lors de l\'ajout:', error);
+                    showMessage('Erreur lors de l\'ajout: ' + error.message, 'error');
+                }
+            }
+        );
+    } catch (error) {
+        console.error('Erreur lors du chargement des travailleurs:', error);
+        showMessage('Erreur lors du chargement des travailleurs: ' + error.message, 'error');
+    }
+}
+
+/**
+ * Gérer le clic sur la carte "Ajouter une tâche"
+ * @param {Object} activity - Données de l'activité
+ */
+async function handleAddTaskClick(activity) {
+    console.log('Clic sur "Ajouter une tâche" pour l\'activité:', activity);
+    
+    // Pour l'instant, afficher un message à l'utilisateur
+    showMessage('La création de tâche n\'est pas encore disponible dans cette interface', 'info');
+}
+
+/**
+ * Gérer le clic sur la carte "Ajouter un.e travailleur.se"
+ * @param {Object} task - Données de la tâche
+ */
+async function handleAddWorkerClick(task) {
+    console.log('Clic sur "Ajouter un.e travailleur.se" pour la tâche:', task);
+    
+    try {
+        // Récupérer la date sélectionnée pour filtrer les travailleurs sous contrat
+        const selectedDate = getSelectedDate() || new Date().toISOString().split('T')[0];
+        console.log('Date sélectionnée pour le filtrage des travailleurs:', selectedDate);
+        
+        // Charger la liste des travailleurs sous contrat à cette date
+        const availableUsers = await loadAvailableUsersForAssignment(selectedDate);
+        console.log('Travailleurs disponibles:', availableUsers);
+        
+        // Ouvrir le modal d'ajout avec le nouveau formulaire
+        showCreateAssignedToModal(task, availableUsers, async (task, formData) => {
+            console.log('Assignation créée avec succès:', formData);
+            
+            // Recharger les assignations de la tâche
+            const taskCard = document.querySelector(`[data-task-id="${task.task_id}"]`);
+            if (taskCard) {
+                const assignmentsContainer = taskCard.querySelector('.content-cards-container');
+                if (assignmentsContainer) {
+                    await loadTaskAssignments(task.task_id, assignmentsContainer);
+                }
+            }
+        });
+        
+    } catch (error) {
+        console.error('Erreur lors de l\'ouverture du formulaire d\'assignation:', error);
+        showMessage('Erreur lors de l\'ouverture du formulaire d\'assignation', 'error');
+    }
+}
+
+/**
+ * Gérer le clic sur le crayon d'édition de tâche
+ * @param {Object} task - Données de la tâche
+ */
+async function handleEditTaskClick(task) {
+    console.log('Clic sur le crayon d\'édition pour la tâche:', task);
+    
+    // Pour l'instant, afficher un message à l'utilisateur
+    showMessage('L\'édition de tâche n\'est pas encore disponible dans cette interface', 'info');
+}
+
+/**
+ * Gérer le clic sur le crayon d'édition d'activité
+ * @param {Object} activity - Données de l'activité
+ */
+async function handleEditActivityClick(activity) {
+    console.log('Clic sur le crayon d\'édition pour l\'activité:', activity);
+    
+    // Pour l'instant, afficher un message à l'utilisateur
+    showMessage('L\'édition d\'activité n\'est pas encore disponible dans cette interface', 'info');
+}
+
+/**
+ * Créer un élément pour afficher une personne assignée à une tâche
+ * @param {Object} assignment - Données de l'assignation
+ * @returns {HTMLElement} Élément DOM pour l'assignation
+ */
+function createAssignedWorkerItem(assignment) {
+    const card = document.createElement('div');
+    card.className = 'content-card content-card--subgroup content-card--nested assigned-worker-card';
+    card.classList.add('clickable');
+    
+    const header = document.createElement('div');
+    header.className = 'content-card-header content-card--nested';
+    
+    const name = document.createElement('div');
+    name.className = 'content-card-title';
+    name.textContent = assignment.assigned_display_name || 'Nom non défini';
+    
+    const period = document.createElement('div');
+    period.className = 'content-card-title-meta';
+    period.textContent = formatPeriodLiterary(assignment.start_date, assignment.end_date) || '';
+    
+    header.appendChild(name);
+    header.appendChild(period);
+    card.appendChild(header);
+    
+    // Forcer les coins arrondis en bas sur le header
+    header.style.borderRadius = 'var(--border-radius)';
+    
+    // Événement de clic pour ouvrir le modal d'édition
+    card.addEventListener('click', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        handleAssignedWorkerCardClick(assignment);
+    });
+    
+    return card;
 }
 
 /**
@@ -1447,18 +1795,129 @@ function handleAddResponsibleClick(activity) {
 function createTaskViewItem(task) {
     const item = document.createElement('div');
     item.className = 'content-card content-card--subgroup content-card--nested';
+    item.dataset.taskId = task.task_id;
+    item.style.cursor = 'default';
     
+    // En-tête de la carte avec nom et période
     const header = document.createElement('div');
     header.className = 'content-card-header content-card--nested';
     
     const title = document.createElement('div');
     title.className = 'content-card-title';
-    title.textContent = task.name || 'Tâche sans nom';
+    title.textContent = task.task_name || 'Tâche sans nom';
+    
+    const period = document.createElement('div');
+    period.className = 'content-card-title-meta';
+    period.textContent = formatPeriodLiterary(task.start_date, task.end_date) || '';
     
     header.appendChild(title);
+    header.appendChild(period);
     item.appendChild(header);
     
+    // Corps de la carte pour les détails et assignations
+    const body = document.createElement('div');
+    body.className = 'content-card-body content-card-body--collapsed';
+    
+    // Description de la tâche (en haut du corps)
+    const description = document.createElement('div');
+    description.className = 'activity-description-in-card';
+    description.style.marginBottom = 'var(--gap-tight)';
+    
+    // Zone cliquable contenant le texte
+    const clickableArea = document.createElement('span');
+    clickableArea.style.cursor = 'pointer';
+    clickableArea.textContent = task.task_description || 'Aucune description disponible';
+    
+    // Effet souligné au survol
+    clickableArea.addEventListener('mouseenter', () => {
+        clickableArea.style.textDecoration = 'underline';
+    });
+    
+    clickableArea.addEventListener('mouseleave', () => {
+        clickableArea.style.textDecoration = 'none';
+    });
+    
+    clickableArea.addEventListener('click', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        handleEditTaskClick(task);
+    });
+    
+    description.appendChild(clickableArea);
+    body.appendChild(description);
+    
+    // Conteneur pour les assignations
+    const assignmentsContainer = document.createElement('div');
+    assignmentsContainer.className = 'content-cards-container content-cards-container--nested';
+    assignmentsContainer.innerHTML = '<p class="no-content-message">Cliquez pour voir les assignations</p>';
+    body.appendChild(assignmentsContainer);
+    
+    item.appendChild(body);
+    
+    // Événement de clic pour déplier/replier la carte
+    header.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleTaskCard(item, task, assignmentsContainer);
+    });
+    
+    // Rendre le header visuellement cliquable
+    header.classList.add('clickable');
+    header.style.cursor = 'pointer';
+    
     return item;
+}
+
+/**
+ * Basculer l'affichage d'une carte de tâche
+ * Assure qu'une seule carte de tâche soit dépliée à la fois dans le contexte de l'activité
+ */
+async function toggleTaskCard(card, task, assignmentsContainer) {
+    const body = card.querySelector('.content-card-body');
+    const isCurrentlyExpanded = card.classList.contains('expanded');
+    
+    if (isCurrentlyExpanded) {
+        // Réduire la carte
+        if (body) {
+            body.classList.remove('content-card-body--expanded');
+            body.classList.add('content-card-body--collapsed');
+            card.classList.remove('expanded');
+        }
+        
+        // Effacer l'état du store
+        clearExpandedTaskCard();
+    } else {
+        // Fermer toutes les autres cartes de tâches dans cette activité
+        const parentActivityCard = card.closest('.content-card[data-activity-id]');
+        if (parentActivityCard) {
+            const otherTaskCards = parentActivityCard.querySelectorAll('.content-card[data-task-id]');
+            otherTaskCards.forEach(otherCard => {
+                if (otherCard !== card) {
+                    const otherBody = otherCard.querySelector('.content-card-body');
+                    if (otherBody) {
+                        otherBody.classList.remove('content-card-body--expanded');
+                        otherBody.classList.add('content-card-body--collapsed');
+                        otherCard.classList.remove('expanded');
+                    }
+                }
+            });
+        }
+        
+        // Développer la carte
+        if (body) {
+            body.classList.remove('content-card-body--collapsed');
+            body.classList.add('content-card-body--expanded');
+            card.classList.add('expanded');
+        }
+        
+        // Charger les assignations si pas encore fait
+        if (!card.dataset.assignmentsLoaded) {
+            loadTaskAssignments(task.task_id, assignmentsContainer);
+            card.dataset.assignmentsLoaded = 'true';
+        }
+        
+        // Mettre à jour le store
+        setExpandedTaskCard(task.task_id);
+    }
 }
 
 /**

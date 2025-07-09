@@ -133,8 +133,7 @@ class ActivityService {
             
             $entry = $this->repository->createActivity($data, $activityTypeId, $userId);
             
-            // Log d'audit
-            $this->versioningRepository->logAudit('activities', $entry, 'create', null, $data);
+
             
             $this->pdo->commit();
             
@@ -181,14 +180,13 @@ class ActivityService {
             $this->pdo->beginTransaction();
             
             // Marquer l'ancienne version comme deprecated
-            $this->versioningRepository->deprecateOldVersion('activities', $entry);
+            $this->versioningRepository->deprecateVersion('activities', $entry);
             
             // Créer la nouvelle version
             $newVersion = $oldVersion['version'] + 1;
             $this->repository->updateActivity($entry, $data, $activityTypeId, $userId, $newVersion);
             
-            // Log d'audit
-            $this->versioningRepository->logAudit('activities', $entry, 'update', $oldVersion, $data);
+
             
             $this->pdo->commit();
             
@@ -215,8 +213,7 @@ class ActivityService {
             
             $this->repository->deleteActivity($entry);
             
-            // Log d'audit
-            $this->versioningRepository->logAudit('activities', $entry, 'delete', $currentVersion, null);
+
             
             $this->pdo->commit();
             
@@ -249,7 +246,7 @@ class ActivityService {
         $formattedActivities = [];
         foreach ($activities as $activity) {
             $formattedActivities[] = [
-                'id' => $activity['activity_id'],
+                'entry' => $activity['entry'],
                 'emoji' => $activity['activity_icon'] ?: '📋',
                 'name' => $activity['activity_name'],
                 'description' => $activity['activity_description'],
@@ -270,19 +267,6 @@ class ActivityService {
     }
     
     /**
-     * Récupérer les responsables d'une activité
-     */
-    public function getResponsiblesForActivity($activity, $date) {
-        $responsibles = $this->repository->getResponsiblesForActivity($activity, $date);
-        
-        return [
-            'responsibles' => $responsibles,
-            'filter_date' => $date,
-            'total_count' => count($responsibles)
-        ];
-    }
-    
-    /**
      * Récupérer les tâches d'une activité
      */
     public function getActivityTasks($activity, $date) {
@@ -295,18 +279,7 @@ class ActivityService {
         ];
     }
     
-    /**
-     * Récupérer les personnes assignées à une tâche
-     */
-    public function getAssignedToTask($task, $date) {
-        $assigned = $this->repository->getAssignedToTask($task, $date);
-        
-        return [
-            'assigned' => $assigned,
-            'filter_date' => $date,
-            'total_count' => count($assigned)
-        ];
-    }
+
     
     /**
      * Récupérer les types d'activités
@@ -345,8 +318,7 @@ class ActivityService {
             // Mettre à jour la version actuelle (écrase l'ancienne version)
             $this->repository->updateAssignedTo($entry, $data, $userId);
             
-            // Log d'audit
-            $this->versioningRepository->logAudit('assigned_to', $entry, 'update', $currentVersion, $data);
+
             
             $this->pdo->commit();
             
@@ -358,66 +330,5 @@ class ActivityService {
         }
     }
     
-    /**
-     * Mettre à jour une responsabilité d'activité
-     */
-    public function updateResponsibleFor($entry, $data, $userId) {
-        // Validation
-        $rules = [
-            'activity' => ['required' => true, 'max_length' => 50],
-            'user_id' => ['required' => true, 'type' => 'integer'],
-            'date' => ['required' => true, 'type' => 'date']
-        ];
-        
-        $errors = Validator::validateInput($data, $rules);
-        if (!empty($errors)) {
-            throw new Exception('Données invalides', 400);
-        }
-        
-        // Récupérer la version actuelle
-        $currentVersion = $this->versioningRepository->getCurrentVersion('responsible_for', $entry);
-        if (!$currentVersion) {
-            throw new Exception('Responsabilité non trouvée', 404);
-        }
-        
-        try {
-            $this->pdo->beginTransaction();
-            
-            // Mettre à jour la version actuelle (écrase l'ancienne version)
-            $this->repository->updateResponsibleFor($entry, $data, $userId);
-            
-            // Log d'audit
-            $this->versioningRepository->logAudit('responsible_for', $entry, 'update', $currentVersion, $data);
-            
-            $this->pdo->commit();
-            
-            return ['entry' => $entry, 'version' => $currentVersion['version']];
-            
-        } catch (Exception $e) {
-            $this->pdo->rollback();
-            throw $e;
-        }
-    }
-    
-    /**
-     * Supprimer toutes les versions d'une responsabilité d'activité
-     * ATTENTION: Vrai DELETE dans une table avec versioning - supprime toutes les versions
-     */
-    public function deleteResponsibleFor($entry, $userId) {
-        try {
-            $this->pdo->beginTransaction();
-            
-            // Supprimer toutes les versions de l'entrée dans la table responsible_for
-            $this->repository->deleteResponsibleFor($entry);
-            
-            // Log d'audit
-            $this->versioningRepository->logAudit('responsible_for', $entry, 'delete', null, null);
-            
-            $this->pdo->commit();
-            
-        } catch (Exception $e) {
-            $this->pdo->rollback();
-            throw $e;
-        }
-    }
+
 } 

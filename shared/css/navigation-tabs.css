@@ -68,14 +68,6 @@
 
 /* Trait de soulignement pour le survol */
 .navigation-tabs-nav-link:hover::after {
-    content: '';
-    position: absolute;
-    bottom: calc(-1 * var(--border-width-fine));
-    left: 0;
-    width: 100%;
-    height: var(--border-width-normal);
-    background-color: var(--text-color);
-    border-radius: 0;
 }
 
 .navigation-tabs-nav-link:hover .navigation-tab-icon {
@@ -99,7 +91,7 @@
 .navigation-tabs-nav-link.active::after {
     content: '';
     position: absolute;
-    bottom: calc(-1 * var(--border-width-fine));
+    bottom: 0;
     left: 0;
     width: 100%;
     height: var(--border-width-normal);

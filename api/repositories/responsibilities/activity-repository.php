@@ -152,8 +152,8 @@ class ActivityRepository extends BaseRepository {
      */
     public function createActivity($data, $activityTypeId, $userId) {
         $stmt = $this->pdo->prepare("
-            INSERT INTO activities (version, created_by, name, icon, description, activity_type, start_date, end_date)
-            VALUES (1, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO activities (version, created_by, name, icon, description, activity_type, start_date, end_date, created_at)
+            VALUES (1, ?, ?, ?, ?, ?, ?, ?, NOW())
         ");
         
         $this->executeQuery($stmt, [
@@ -174,8 +174,8 @@ class ActivityRepository extends BaseRepository {
      */
     public function updateActivity($entry, $data, $activityTypeId, $userId, $newVersion) {
         $stmt = $this->pdo->prepare("
-            INSERT INTO activities (entry, version, created_by, name, icon, description, activity_type, start_date, end_date)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO activities (entry, version, created_by, name, icon, description, activity_type, start_date, end_date, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
         ");
         
         $this->executeQuery($stmt, [
@@ -225,7 +225,7 @@ class ActivityRepository extends BaseRepository {
     public function getActivitiesForEditor($date, $type = null) {
         $query = "
             SELECT 
-                a.entry as activity_id,
+                a.entry as entry,
                 a.name as activity_name,
                 a.icon as activity_icon,
                 a.description as activity_description,
@@ -253,34 +253,6 @@ class ActivityRepository extends BaseRepository {
     }
     
     /**
-     * Récupérer les responsables d'une activité
-     */
-    public function getResponsiblesForActivity($activity, $date) {
-        $stmt = $this->pdo->prepare("
-            SELECT 
-                rf.entry,
-                rf.user as responsible_user_id,
-                u.display_name as responsible_display_name,
-                u.initials as responsible_initials,
-                u.email as responsible_email,
-                rf.start_date,
-                rf.end_date,
-                rf.created_at,
-                rf.created_by
-            FROM responsible_for rf
-            LEFT JOIN users u ON rf.user = u.id AND u.status = 'active'
-            WHERE rf.activity = ? 
-            AND rf.status = 'current'
-            AND (rf.end_date IS NULL OR rf.end_date >= ?)
-            ORDER BY rf.start_date ASC, 
-                     CASE WHEN rf.end_date IS NULL THEN 1 ELSE 0 END, 
-                     rf.end_date ASC
-        ");
-        
-        return $this->fetchAll($stmt, [$activity, $date]);
-    }
-    
-    /**
      * Récupérer les tâches d'une activité
      */
     public function getActivityTasks($activity, $date) {
@@ -305,32 +277,7 @@ class ActivityRepository extends BaseRepository {
         return $this->fetchAll($stmt, [$activity, $date]);
     }
     
-    /**
-     * Récupérer les personnes assignées à une tâche
-     */
-    public function getAssignedToTask($task, $date) {
-        $stmt = $this->pdo->prepare("
-            SELECT 
-                at.user as assigned_user_id,
-                u.display_name as assigned_display_name,
-                u.initials as assigned_initials,
-                u.email as assigned_email,
-                at.start_date,
-                at.end_date,
-                at.created_at,
-                at.created_by
-            FROM assigned_to at
-            LEFT JOIN users u ON at.user = u.id AND u.status = 'active'
-            WHERE at.task = ? 
-            AND at.status = 'current'
-            AND (at.end_date IS NULL OR at.end_date >= ?)
-            ORDER BY at.start_date ASC, 
-                     CASE WHEN at.end_date IS NULL THEN 1 ELSE 0 END, 
-                     at.end_date ASC
-        ");
-        
-        return $this->fetchAll($stmt, [$task, $date]);
-    }
+
     
     /**
      * Récupérer tous les types d'activités
@@ -364,35 +311,5 @@ class ActivityRepository extends BaseRepository {
         ]);
     }
     
-    /**
-     * Mettre à jour une responsabilité d'activité (écrase la version actuelle)
-     */
-    public function updateResponsibleFor($entry, $data, $userId) {
-        $stmt = $this->pdo->prepare("
-            UPDATE responsible_for 
-            SET activity = ?, user = ?, start_date = ?, end_date = ?
-            WHERE entry = ? AND status = 'current'
-        ");
-        
-        return $this->executeQuery($stmt, [
-            Helpers::sanitize($data['activity']),
-            $data['user_id'],
-            $data['date'],
-            $data['end_date'] ?? null,
-            $entry
-        ]);
-    }
-    
-    /**
-     * Supprimer toutes les versions d'une responsabilité d'activité
-     * ATTENTION: Vrai DELETE dans une table avec versioning - supprime toutes les versions
-     */
-    public function deleteResponsibleFor($entry) {
-        $stmt = $this->pdo->prepare("
-            DELETE FROM responsible_for 
-            WHERE entry = ?
-        ");
-        
-        return $this->executeQuery($stmt, [$entry]);
-    }
+
 } 

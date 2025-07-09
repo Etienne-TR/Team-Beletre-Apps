@@ -186,6 +186,52 @@ onDateChange((newDate, formattedDate) => {
 - Toutes les vues se synchronisent automatiquement
 - Responsive design avec adaptation mobile
 
+### `modal.js`
+**Composant modal réutilisable pour afficher des contenus dans des fenêtres modales**
+
+```javascript
+import { showModal, showConfirmModal, showAlertModal } from '../../../modules/components/modal.js';
+
+// Afficher un contenu dans un modal
+const modal = showModal(formElement, {
+    title: 'Titre du modal',
+    width: '500px',
+    maxWidth: '90vw'
+});
+
+// Modal de confirmation
+const confirmed = await showConfirmModal(
+    'Êtes-vous sûr de vouloir supprimer cet élément ?',
+    'Confirmation',
+    'Supprimer',
+    'Annuler'
+);
+
+// Modal d'alerte
+await showAlertModal('Opération réussie !', 'Succès', 'OK');
+```
+
+**Fonctionnalités :**
+- Affichage de contenu HTML ou éléments DOM
+- Animations d'entrée et de sortie fluides
+- Gestion automatique de la fermeture (clic extérieur, touche Échap, bouton)
+- Modals de confirmation et d'alerte prêts à l'emploi
+- Styles CSS inline pour une portabilité maximale
+
+**API :**
+- `showModal(content, options)` : Affiche un contenu dans un modal
+- `showConfirmModal(message, title, confirmText, cancelText)` : Modal de confirmation
+- `showAlertModal(message, title, buttonText)` : Modal d'alerte
+
+**Options du modal :**
+- `title` : Titre du modal (optionnel)
+- `showCloseButton` : Afficher le bouton de fermeture (défaut: true)
+- `closeOnOutsideClick` : Fermer en cliquant à l'extérieur (défaut: true)
+- `closeOnEscape` : Fermer avec la touche Échap (défaut: true)
+- `width` / `maxWidth` : Dimensions du modal
+- `height` / `maxHeight` : Hauteur du modal
+- `onClose` : Callback appelé lors de la fermeture
+
 ### `navigation-tabs.js`
 **Navigation par onglets entre les vues d'application**
 

@@ -50,24 +50,14 @@ class ActivityController extends BaseAPI {
             case 'get_activities':
                 $this->getActivities();
                 break;
-            case 'get_responsible_for':
-                $this->responsibleFor();
-                break;
             case 'get_activity_tasks':
                 $this->getActivityTasks();
                 break;
-            case 'get_assigned_to':
-                $this->getAssignedTo();
-                break;
+
             case 'update_assigned_to':
                 $this->updateAssignedTo();
                 break;
-            case 'update_responsible_for':
-                $this->updateResponsibleFor();
-                break;
-            case 'delete_responsible_for':
-                $this->deleteResponsibleFor();
-                break;
+
             
             // === TYPES D'ACTIVITÉS ===
             case 'get_activity_types':
@@ -219,26 +209,6 @@ class ActivityController extends BaseAPI {
     }
     
     /**
-     * Lister les responsables d'une activité
-     */
-    private function responsibleFor() {
-        try {
-            $date = $_GET['date'] ?? '';
-            $activity = $_GET['activity'] ?? '';
-            
-            if (empty($date) || empty($activity)) {
-                $this->sendError('Date et activité requises');
-            }
-            
-            $result = $this->activityService->getResponsiblesForActivity($activity, $date);
-            $this->sendSuccess($result);
-            
-        } catch (Exception $e) {
-            $this->sendError('Erreur lors de la récupération des responsables: ' . $e->getMessage(), $e->getCode() ?: 500);
-        }
-    }
-    
-    /**
      * Récupérer les tâches d'une activité
      */
     private function getActivityTasks() {
@@ -258,25 +228,7 @@ class ActivityController extends BaseAPI {
         }
     }
     
-    /**
-     * Récupérer les personnes assignées à une tâche
-     */
-    private function getAssignedTo() {
-        try {
-            $date = $_GET['date'] ?? '';
-            $task = $_GET['task'] ?? '';
-            
-            if (empty($date) || empty($task)) {
-                $this->sendError('Date et tâche requises');
-            }
-            
-            $result = $this->activityService->getAssignedToTask($task, $date);
-            $this->sendSuccess($result);
-            
-        } catch (Exception $e) {
-            $this->sendError('Erreur lors de la récupération des personnes assignées: ' . $e->getMessage(), $e->getCode() ?: 500);
-        }
-    }
+
     
     /**
      * Mettre à jour une assignation de tâche
@@ -300,53 +252,7 @@ class ActivityController extends BaseAPI {
         }
     }
     
-    /**
-     * Mettre à jour une responsabilité d'activité
-     */
-    private function updateResponsibleFor() {
-        try {
-            $this->requireMethod('POST');
-            
-            $entry = $_GET['entry'] ?? '';
-            if (empty($entry)) {
-                $this->sendError('Entry requis');
-            }
-            
-            $data = $this->getJsonInput();
-            $result = $this->activityService->updateResponsibleFor($entry, $data, $this->currentUser['id']);
-            
-            $this->sendSuccess($result, 'Responsabilité mise à jour avec succès');
-            
-        } catch (Exception $e) {
-            $this->sendError('Erreur lors de la mise à jour: ' . $e->getMessage(), $e->getCode() ?: 500);
-        }
-    }
-    
-    /**
-     * Supprimer une responsabilité d'activité
-     */
-    private function deleteResponsibleFor() {
-        try {
-            // Accepter DELETE ou POST avec _method=DELETE
-            $method = $_SERVER['REQUEST_METHOD'];
-            $jsonInput = $this->getJsonInput();
-            
-            if ($method === 'DELETE' || ($method === 'POST' && isset($jsonInput['_method']) && $jsonInput['_method'] === 'DELETE')) {
-                $entry = $_GET['entry'] ?? '';
-                if (empty($entry)) {
-                    $this->sendError('Entry requis');
-                }
-                
-                $this->activityService->deleteResponsibleFor($entry, $this->currentUser['id']);
-                $this->sendSuccess(null, 'Responsabilité supprimée avec succès');
-            } else {
-                $this->sendError('Méthode non autorisée');
-            }
-            
-        } catch (Exception $e) {
-            $this->sendError('Erreur lors de la suppression: ' . $e->getMessage(), $e->getCode() ?: 500);
-        }
-    }
+
     
     // ========================================
     // MÉTHODES TYPES D'ACTIVITÉS

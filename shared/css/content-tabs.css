@@ -9,7 +9,6 @@
 /* Conteneur principal des onglets */
 .tabs-container {
     width: 100%;
-    border-bottom: var(--border-width-fine) solid var(--border-color);
     background-color: var(--background-lightest);
 }
 
@@ -31,8 +30,10 @@
 /* Lien de l'onglet */
 .tabs-nav-link {
     display: flex;
+    box-sizing: border-box;
     align-items: center;
     justify-content: center;
+    height:var(--input-height);
     gap: var(--gap-tight);
     width: 100%;
     padding: var(--gap-medium) var(--gap-large);
@@ -70,8 +71,8 @@
 
 /* État actif */
 .tabs-nav-link.active {
-    color: var(--primary-color);
-    font-weight: var(--font-weight-semibold);
+    color: var(--text-color);
+    font-weight: var(--font-weight-medium);
 }
 
 .tabs-nav-link.active .tab-icon {
@@ -82,18 +83,16 @@
 .tabs-nav-link.active::after {
     content: '';
     position: absolute;
-    bottom: calc(-1 * var(--border-width-fine));
+    bottom: 0;
     left: 0;
     width: 100%;
     height: var(--border-width-normal);
-    background-color: var(--primary-color);
+    background-color: var(--text-color);
     border-radius: var(--border-radius-small) var(--border-radius-small) 0 0;
 }
 
 /* État de focus */
 .tabs-nav-link:focus {
-    box-shadow: var(--shadow-focus);
-    border-radius: var(--border-radius-small);
 }
 
 /* État désactivé */
@@ -110,7 +109,8 @@
 
 /* Contenu des onglets */
 .tabs-content {
-    padding: var(--gap-large);
+    padding: 0;
+    padding-top: var(--gap-tight);
     background-color: var(--background-lightest);
 }
 

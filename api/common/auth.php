@@ -189,11 +189,39 @@ try {
                             'initials' => $session['initials']
                         ]
                     ]);
+                    exit;
                 } else {
                     echo json_encode(['success' => false, 'error' => 'Session expirée']);
+                    exit;
+                }
+            } else {
+                // Cas localhost : auto-authentification user 1
+                $isLocalhost = in_array($_SERVER['HTTP_HOST'] ?? '', ['localhost', '127.0.0.1']) || 
+                               strpos($_SERVER['HTTP_HOST'] ?? '', 'localhost') !== false;
+                if ($isLocalhost) {
+                    $stmt = $pdo->prepare("SELECT id, display_name, initials, email FROM users WHERE id = 1");
+                    $stmt->execute();
+                    $user = $stmt->fetch();
+                    if ($user) {
+                        echo json_encode([
+                            'success' => true,
+                            'user' => [
+                                'id' => $user['id'],
+                                'nextcloud_id' => 'dev-local',
+                                'email' => $user['email'],
+                                'displayname' => $user['display_name'],
+                                'initials' => $user['initials']
+                            ]
+                        ]);
+                        exit;
+                    } else {
+                        echo json_encode(['success' => false, 'error' => 'Utilisateur local id=1 non trouvé']);
+                        exit;
                 }
             } else {
                 echo json_encode(['success' => false, 'error' => 'Pas de session']);
+                    exit;
+                }
             }
             break;
             

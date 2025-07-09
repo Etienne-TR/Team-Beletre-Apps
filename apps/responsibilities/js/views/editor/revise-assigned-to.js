@@ -1,21 +1,16 @@
 // Formulaire d'édition des assignations
+import { showModal, showConfirmModal } from '/modules/components/modal.js';
 
 /**
- * Créer le formulaire d'édition des assignations
- * @param {Object} assignment - Données de l'assignation à éditer
+ * Créer le formulaire de révision des assignations
+ * @param {Object} assignment - Données de l'assignation à réviser
  * @param {Function} onSave - Callback appelé lors de la sauvegarde
  * @param {Function} onDelete - Callback appelé lors de la suppression
- * @param {Function} onClose - Callback appelé pour fermer le modal
  * @returns {HTMLElement} Le formulaire créé
  */
-export function createEditAssignmentForm(assignment, onSave, onDelete, onClose) {
+export function createReviseAssignedToForm(assignment, onSave, onDelete) {
     const form = document.createElement('div');
     form.className = 'edit-assignment-form';
-    
-    // Titre du formulaire
-    const title = document.createElement('h3');
-    title.textContent = 'Modifier l\'assignation';
-    form.appendChild(title);
     
     // Conteneur des champs
     const fieldsContainer = document.createElement('div');
@@ -102,7 +97,14 @@ export function createEditAssignmentForm(assignment, onSave, onDelete, onClose) 
     
     deleteButton.addEventListener('click', async () => {
         // Demander confirmation avant suppression
-        if (!confirm('Êtes-vous sûr de vouloir supprimer cette responsabilité ? Cette action est irréversible.')) {
+        const confirmed = await showConfirmModal(
+            'Êtes-vous sûr de vouloir supprimer cette assignation ? Cette action est irréversible.',
+            'Confirmation de suppression',
+            'Supprimer',
+            'Annuler'
+        );
+        
+        if (!confirmed) {
             return;
         }
         
@@ -112,16 +114,16 @@ export function createEditAssignmentForm(assignment, onSave, onDelete, onClose) 
             deleteButton.textContent = 'Suppression...';
             
             // Appeler l'API de suppression
-            await deleteResponsibility(assignment);
+            await deleteAssignment(assignment);
             
             // Appeler le callback onDelete si fourni
             if (onDelete) {
                 onDelete(assignment);
             }
             
-            // Fermer le modal
-            if (onClose) {
-                onClose();
+            // Fermer le modal en cas de succès de suppression
+            if (form._modal) {
+                form._modal.close();
             }
             
         } catch (error) {
@@ -147,16 +149,16 @@ export function createEditAssignmentForm(assignment, onSave, onDelete, onClose) 
             saveButton.textContent = 'Enregistrement...';
             
             // Appeler l'API de sauvegarde
-            await saveResponsibility(assignment, formData);
+            const result = await saveAssignment(assignment, formData);
             
             // Appeler le callback onSave si fourni
             if (onSave) {
                 onSave(assignment, formData);
             }
             
-            // Fermer le modal
-            if (onClose) {
-                onClose();
+            // Fermer le modal en cas de succès de sauvegarde
+            if (form._modal) {
+                form._modal.close();
             }
             
         } catch (error) {
@@ -166,7 +168,6 @@ export function createEditAssignmentForm(assignment, onSave, onDelete, onClose) 
             
             // Afficher l'erreur
             alert('Erreur lors de l\'enregistrement : ' + error.message);
-            console.error('Erreur lors de l\'enregistrement:', error);
         }
     });
     
@@ -179,83 +180,25 @@ export function createEditAssignmentForm(assignment, onSave, onDelete, onClose) 
 
 /**
  * Afficher le formulaire dans un modal
- * @param {Object} assignment - Données de l'assignation à éditer
+ * @param {Object} assignment - Données de l'assignation à réviser
  * @param {Function} onSave - Callback appelé lors de la sauvegarde
  * @param {Function} onDelete - Callback appelé lors de la suppression
  */
-export function showEditAssignmentModal(assignment, onSave, onDelete) {
-    // Créer le modal
-    const modal = document.createElement('div');
-    modal.className = 'modal-overlay';
-    // Style minimal pour rendre le modal visible
-    modal.style.position = 'fixed';
-    modal.style.top = '0';
-    modal.style.left = '0';
-    modal.style.width = '100vw';
-    modal.style.height = '100vh';
-    modal.style.background = 'rgba(0,0,0,0.3)';
-    modal.style.display = 'flex';
-    modal.style.alignItems = 'center';
-    modal.style.justifyContent = 'center';
-    modal.style.zIndex = '9999';
-
-    const modalContent = document.createElement('div');
-    modalContent.className = 'modal-content';
-    modalContent.style.background = '#fff';
-    modalContent.style.padding = '2rem';
-    modalContent.style.borderRadius = '8px';
-    modalContent.style.boxShadow = '0 2px 16px rgba(0,0,0,0.2)';
-    modalContent.style.minWidth = '320px';
-    modalContent.style.maxWidth = '90vw';
-    modalContent.style.maxHeight = '90vh';
-    modalContent.style.overflowY = 'auto';
-    modalContent.style.position = 'relative';
-
-    // Fonction pour fermer le modal
-    const closeModal = () => {
-        document.body.removeChild(modal);
-        document.removeEventListener('keydown', handleEscape);
-    };
-
+export function showReviseAssignedToModal(assignment, onSave, onDelete) {
     // Créer le formulaire
-    const form = createEditAssignmentForm(assignment, onSave, onDelete, closeModal);
-    modalContent.appendChild(form);
+    const form = createReviseAssignedToForm(assignment, onSave, onDelete);
     
-    // Bouton de fermeture dans le conteneur du formulaire
-    const closeButton = document.createElement('button');
-    closeButton.className = 'modal-close';
-    closeButton.innerHTML = '&times;';
-    closeButton.style.position = 'absolute';
-    closeButton.style.top = '8px';
-    closeButton.style.right = '12px';
-    closeButton.style.background = 'transparent';
-    closeButton.style.border = 'none';
-    closeButton.style.fontSize = '2rem';
-    closeButton.style.cursor = 'pointer';
-    closeButton.style.zIndex = '1';
-    closeButton.addEventListener('click', closeModal);
-    modalContent.appendChild(closeButton);
-    
-    modal.appendChild(modalContent);
-    
-    // Fermer le modal en cliquant à l'extérieur
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
-            closeModal();
-        }
+    // Afficher le formulaire dans un modal
+    const modal = showModal(form, {
+        title: 'Réviser l\'assignation',
+        width: '500px',
+        maxWidth: '90vw'
     });
     
-    // Fermer le modal avec la touche Échap
-    const handleEscape = (e) => {
-        if (e.key === 'Escape') {
-            closeModal();
-        }
-    };
-    document.addEventListener('keydown', handleEscape);
+    // Passer la référence du modal au formulaire pour la fermeture automatique
+    form._modal = modal;
     
-    // Ajouter le modal au DOM
-    document.body.appendChild(modal);
-    console.log('[showEditAssignmentModal] Modal ajouté au DOM', modal);
+    return modal;
 }
 
 /**
@@ -263,7 +206,7 @@ export function showEditAssignmentModal(assignment, onSave, onDelete) {
  * @param {Object} formData - Données du formulaire
  * @returns {Object} Résultat de la validation {isValid: boolean, errors: Array}
  */
-export function validateAssignmentForm(formData) {
+export function validateReviseAssignedToForm(formData) {
     const errors = [];
     
     // Vérifier que la date de début est renseignée
@@ -288,58 +231,79 @@ export function validateAssignmentForm(formData) {
 }
 
 /**
- * Sauvegarder une responsabilité via l'API updateResponsibleFor
+ * Sauvegarder une assignation via l'API updateVersion
  * @param {Object} assignment - Données de l'assignation à sauvegarder
  * @param {Object} formData - Données du formulaire
  * @returns {Promise} Résultat de la sauvegarde
  */
-export async function saveResponsibility(assignment, formData) {
+export async function saveAssignment(assignment, formData) {
     try {
-        // Préparer les données selon le format attendu par updateResponsibleFor
+        // Préparer les données selon le format attendu par updateAssignedTo
         const apiData = {
-            activity: assignment.activity,
-            user_id: assignment.responsible_user_id,
-            date: formData.start_date,
+            task: assignment.task || assignment.taskEntry || assignment.task_id,
+            user: assignment.assigned_user_id || assignment.user_id || assignment.user,
+            start_date: formData.start_date,
             end_date: formData.end_date || null
         };
-
-        console.log('Données à envoyer à l\'API:', apiData);
-
-        // Appel à l'API updateResponsibleFor
-        const response = await fetch(`/api/controllers/responsibilities/activity-controller.php?action=update_responsible_for&entry=${assignment.entry}`, {
+        // Ajouter la version si elle existe
+        if (assignment.version) {
+            apiData.version = assignment.version;
+        }
+        // Validation des données requises
+        if (!apiData.task) {
+            throw new Error('Champ "task" manquant dans les données de l\'assignation');
+        }
+        if (!apiData.user) {
+            throw new Error('Champ "user" manquant dans les données de l\'assignation');
+        }
+        const apiUrl = `/api/controllers/responsibilities/assigned-to-controller.php?action=updateAssignedTo&version=${assignment.version}`;
+        // Appel à l'API updateAssignedTo
+        const response = await fetch(apiUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify(apiData)
         });
-
         if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'Erreur lors de la sauvegarde');
+            const errorText = await response.text();
+            let errorData;
+            try {
+                errorData = JSON.parse(errorText);
+            } catch (parseError) {
+                errorData = { error: errorText };
+            }
+            throw new Error(errorData.error || `Erreur HTTP ${response.status}: ${response.statusText}`);
         }
-
-        const result = await response.json();
-        console.log('Résultat de la sauvegarde:', result);
-        
+        const responseText = await response.text();
+        let result;
+        try {
+            result = JSON.parse(responseText);
+        } catch (parseError) {
+            result = { success: true, data: responseText };
+        }
         return result;
     } catch (error) {
-        console.error('Erreur lors de la sauvegarde:', error);
         throw error;
     }
 }
 
 /**
- * Supprimer une responsabilité via l'API deleteResponsibleFor
+ * Supprimer une assignation via l'API deleteEntryAssignedTo
  * @param {Object} assignment - Données de l'assignation à supprimer
  * @returns {Promise} Résultat de la suppression
  */
-export async function deleteResponsibility(assignment) {
+export async function deleteAssignment(assignment) {
     try {
-        console.log('Suppression de la responsabilité:', assignment);
+        // Validation des données requises
+        if (assignment.entry === undefined || assignment.entry === null || assignment.entry === '') {
+            throw new Error('Champ "entry" manquant dans les données de l\'assignation');
+        }
+        
+        const apiUrl = `/api/controllers/responsibilities/assigned-to-controller.php?action=deleteEntry&entry=${assignment.entry}`;
 
-        // Appel à l'API deleteResponsibleFor
-        const response = await fetch(`/api/controllers/responsibilities/activity-controller.php?action=delete_responsible_for&entry=${assignment.entry}`, {
+        // Appel à l'API deleteEntry
+        const response = await fetch(apiUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -348,16 +312,29 @@ export async function deleteResponsibility(assignment) {
         });
 
         if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'Erreur lors de la suppression');
+            const errorText = await response.text();
+            
+            let errorData;
+            try {
+                errorData = JSON.parse(errorText);
+            } catch (parseError) {
+                errorData = { error: errorText };
+            }
+            
+            throw new Error(errorData.error || `Erreur HTTP ${response.status}: ${response.statusText}`);
         }
 
-        const result = await response.json();
-        console.log('Résultat de la suppression:', result);
+        const responseText = await response.text();
+        
+        let result;
+        try {
+            result = JSON.parse(responseText);
+        } catch (parseError) {
+            result = { success: true, data: responseText };
+        }
         
         return result;
     } catch (error) {
-        console.error('Erreur lors de la suppression:', error);
         throw error;
     }
 } 

@@ -1,6 +1,8 @@
 <?php
-ini_set('display_errors', 0);
+ini_set('display_errors', 1);
 error_reporting(E_ALL);
+ini_set('log_errors', 1);
+ini_set('error_log', '/tmp/php_errors.log');
 
 /**
  * API de gestion des responsabilités d'activités - Contrôleur
@@ -24,8 +26,24 @@ class ResponsibleForController extends BaseAPI {
         $action = $_GET['action'] ?? '';
         
         switch ($action) {
-            case 'create':
+            case 'createEntry':
                 $this->createResponsibleFor();
+                break;
+            
+            case 'updateVersion':
+                $this->updateResponsibleFor();
+                break;
+            
+            case 'deleteVersion':
+                $this->deleteVersionResponsibleFor();
+                break;
+            
+            case 'deleteEntry':
+                $this->deleteEntryResponsibleFor();
+                break;
+            
+            case 'listFromDate':
+                $this->getResponsiblesFromDate();
                 break;
             
             default:
@@ -37,7 +55,9 @@ class ResponsibleForController extends BaseAPI {
      * Créer une nouvelle responsabilité d'activité
      */
     private function createResponsibleFor() {
+        error_log("=== DÉBUT createResponsibleFor ===");
         try {
+            error_log("Vérification de la méthode HTTP");
             $this->requireMethod('POST');
             
             $data = $this->getJsonInput();
@@ -66,6 +86,11 @@ class ResponsibleForController extends BaseAPI {
                 $this->sendError('Format de date invalide pour end_date. Utilisez YYYY-MM-DD', 400);
             }
             
+            // Validation que la date de fin est après la date de début
+            if ($end_date && $end_date <= $start_date) {
+                $this->sendError('La date de fin doit être postérieure à la date de début', 400);
+            }
+            
             // Appel au service
             $result = $this->responsibleForService->createResponsibleFor(
                 $created_by,
@@ -78,7 +103,133 @@ class ResponsibleForController extends BaseAPI {
             $this->sendSuccess($result, 'Responsabilité créée avec succès');
             
         } catch (Exception $e) {
-            $this->sendError('Erreur lors de la création: ' . $e->getMessage(), $e->getCode() ?: 500);
+            $errorCode = $e->getCode();
+            // S'assurer que le code d'erreur est un entier
+            if (!is_numeric($errorCode) || $errorCode == 0) {
+                $errorCode = 500;
+            }
+            $this->sendError('Erreur lors de la création: ' . $e->getMessage(), (int)$errorCode);
+        }
+    }
+    
+    /**
+     * Mettre à jour une responsabilité d'activité
+     */
+    private function updateResponsibleFor() {
+        try {
+            error_log("DEBUG: updateResponsibleFor appelé");
+            
+            $this->requireMethod('POST');
+            error_log("DEBUG: Méthode POST vérifiée");
+            
+            $version = $_GET['version'] ?? '';
+            error_log("DEBUG: Version reçue: " . $version);
+            if (empty($version)) {
+                $this->sendError('Version requise');
+            }
+            
+            $data = $this->getJsonInput();
+            error_log("DEBUG: Données JSON reçues: " . json_encode($data));
+            
+            error_log("DEBUG: Appel du service avec version=$version, userId=" . $this->currentUser['id']);
+            $result = $this->responsibleForService->updateResponsibleFor($version, $data, $this->currentUser['id']);
+            error_log("DEBUG: Résultat du service: " . json_encode($result));
+            
+            $this->sendSuccess($result, 'Responsabilité mise à jour avec succès');
+            
+        } catch (Exception $e) {
+            error_log("DEBUG: Exception dans updateResponsibleFor: " . $e->getMessage());
+            $errorCode = $e->getCode();
+            if (!is_numeric($errorCode) || $errorCode == 0) {
+                $errorCode = 500;
+            }
+            $this->sendError('Erreur lors de la mise à jour: ' . $e->getMessage(), (int)$errorCode);
+        }
+    }
+    
+
+    
+    /**
+     * Supprimer une version spécifique d'une responsabilité d'activité
+     */
+    private function deleteVersionResponsibleFor() {
+        try {
+            // Accepter DELETE ou POST avec _method=DELETE
+            $method = $_SERVER['REQUEST_METHOD'];
+            $jsonInput = $this->getJsonInput();
+            
+            if ($method === 'DELETE' || ($method === 'POST' && isset($jsonInput['_method']) && $jsonInput['_method'] === 'DELETE')) {
+                $version = $_GET['version'] ?? '';
+                if (empty($version)) {
+                    $this->sendError('Version requise');
+                }
+                
+                $this->responsibleForService->deleteVersionResponsibleFor($version, $this->currentUser['id']);
+                $this->sendSuccess(null, 'Version de responsabilité supprimée avec succès');
+            } else {
+                $this->sendError('Méthode non autorisée');
+            }
+            
+        } catch (Exception $e) {
+            $errorCode = $e->getCode();
+            if (!is_numeric($errorCode) || $errorCode == 0) {
+                $errorCode = 500;
+            }
+            $this->sendError('Erreur lors de la suppression de la version: ' . $e->getMessage(), (int)$errorCode);
+        }
+    }
+    
+    /**
+     * Supprimer toutes les versions d'une entrée de responsabilité d'activité
+     */
+    private function deleteEntryResponsibleFor() {
+        try {
+            // Accepter DELETE ou POST avec _method=DELETE
+            $method = $_SERVER['REQUEST_METHOD'];
+            $jsonInput = $this->getJsonInput();
+            
+            if ($method === 'DELETE' || ($method === 'POST' && isset($jsonInput['_method']) && $jsonInput['_method'] === 'DELETE')) {
+                $entry = $_GET['entry'] ?? '';
+                if (empty($entry)) {
+                    $this->sendError('Entry requise');
+                }
+                
+                $this->responsibleForService->deleteEntryResponsibleFor($entry, $this->currentUser['id']);
+                $this->sendSuccess(null, 'Toutes les versions de la responsabilité supprimées avec succès');
+            } else {
+                $this->sendError('Méthode non autorisée');
+            }
+            
+        } catch (Exception $e) {
+            $errorCode = $e->getCode();
+            if (!is_numeric($errorCode) || $errorCode == 0) {
+                $errorCode = 500;
+            }
+            $this->sendError('Erreur lors de la suppression de l\'entrée: ' . $e->getMessage(), (int)$errorCode);
+        }
+    }
+    
+    /**
+     * Récupérer les responsables d'une activité à partir d'une date
+     */
+    private function getResponsiblesFromDate() {
+        try {
+            $date = $_GET['date'] ?? '';
+            $activity = $_GET['activity'] ?? '';
+            
+            if (empty($date) || empty($activity)) {
+                $this->sendError('Date et activité requises');
+            }
+            
+            $result = $this->responsibleForService->getResponsiblesFromDate($activity, $date);
+            $this->sendSuccess($result);
+            
+        } catch (Exception $e) {
+            $errorCode = $e->getCode();
+            if (!is_numeric($errorCode) || $errorCode == 0) {
+                $errorCode = 500;
+            }
+            $this->sendError('Erreur lors de la récupération des responsables: ' . $e->getMessage(), (int)$errorCode);
         }
     }
 }

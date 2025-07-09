@@ -17,93 +17,110 @@ class VersioningRepository extends BaseRepository {
     }
     
     /**
-     * Créer une nouvelle entité avec versioning
+     * Créer une nouvelle entrée avec versioning (INSERT dynamique)
      * @param string $table - Nom de la table
-     * @param array $data - Données à insérer
-     * @param array $options - Options supplémentaires
+     * @param string $created_at - Date de création
+     * @param int $created_by - ID de l'utilisateur créateur
+     * @param array $data - Champs métier supplémentaires
      * @return int - ID de l'entité créée
      */
-    public function createEntity($table, $data, $options = []) {
-        // Préparer les données pour l'insertion
-        $insertData = $this->prepareInsertData($table, $data, $options);
-        
-        // Construire la requête INSERT
-        $columns = array_keys($insertData);
-        $placeholders = array_fill(0, count($columns), '?');
-        
-        $sql = "INSERT INTO {$table} (" . implode(', ', $columns) . ") VALUES (" . implode(', ', $placeholders) . ")";
-        
+    public function createEntry($table, $created_at, $created_by, $data = []) {
+        // Champs de base
+        $fields = ['created_at', 'created_by', 'status'];
+        $placeholders = ['NOW()', '?', "'current'"];
+        $values = [$created_by];
+
+        // Ajouter les champs métier si présents
+        foreach ($data as $key => $value) {
+            $fields[] = $key;
+            $placeholders[] = '?';
+            $values[] = $value;
+        }
+
+        $sql = "INSERT INTO {$table} (" . implode(', ', $fields) . ") VALUES (" . implode(', ', $placeholders) . ")";
         $stmt = $this->pdo->prepare($sql);
-        $stmt->execute(array_values($insertData));
-        
-        $entry = $this->pdo->lastInsertId();
-        
-        // Log d'audit
-        $this->logAudit($table, $entry, 'create', null, $data);
-        
-        return $entry;
+        $stmt->execute($values);
+
+        $version = $this->pdo->lastInsertId();
+
+        // UPDATE pour entry = version
+        $updateSql = "UPDATE {$table} SET entry = ? WHERE version = ?";
+        $updateStmt = $this->pdo->prepare($updateSql);
+        $updateStmt->execute([$version, $version]);
+
+        return $version;
     }
     
     /**
-     * Mettre à jour une entité (création d'une nouvelle version)
+     * Lire une version spécifique d'une entité versionnée
      * @param string $table - Nom de la table
-     * @param int $entry - ID de l'entité
+     * @param int $version - Numéro de version à lire
+     * @return array|null - Données de la version ou null si non trouvée
+     */
+    public function readVersion($table, $version) {
+        $sql = "SELECT version, created_at, created_by, user, status FROM {$table} WHERE version = ?";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([$version]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Mettre à jour une version spécifique
+     * @param string $table - Nom de la table
+     * @param int $version - Version à mettre à jour
      * @param array $data - Données à mettre à jour
-     * @param array $options - Options supplémentaires
-     * @return int - Nouvelle version
+     * @return bool - Succès de l'opération
      */
-    public function updateEntity($table, $entry, $data, $options = []) {
-        // Récupérer la version actuelle
-        $oldVersion = $this->getCurrentVersion($table, $entry);
-        if (!$oldVersion) {
-            throw new Exception('Entité non trouvée');
+    public function updateVersion($table, $version, $data = []) {
+        if (empty($data)) {
+            error_log("SQL UPDATE VERSION: Aucune donnée à mettre à jour");
+            return false;
         }
         
-        // Marquer l'ancienne version comme deprecated
-        $this->deprecateOldVersion($table, $entry);
+        // Construire dynamiquement la requête SQL
+        $setClauses = [];
+        $values = [];
         
-        // Préparer les données pour l'insertion
-        $insertData = $this->prepareUpdateData($table, $entry, $data, $oldVersion, $options);
+        foreach ($data as $field => $value) {
+            // Ignorer les champs système
+            if (!in_array($field, ['entry', 'version', 'created_by', 'status', 'created_at'])) {
+                $setClauses[] = "{$field} = ?";
+                $values[] = $value;
+            }
+        }
         
-        // Construire la requête INSERT pour la nouvelle version
-        $columns = array_keys($insertData);
-        $placeholders = array_fill(0, count($columns), '?');
+        if (empty($setClauses)) {
+            error_log("SQL UPDATE VERSION: Aucun champ à mettre à jour après filtrage");
+            return false;
+        }
         
-        $sql = "INSERT INTO {$table} (" . implode(', ', $columns) . ") VALUES (" . implode(', ', $placeholders) . ")";
+        $sql = "UPDATE {$table} SET " . implode(', ', $setClauses) . " WHERE version = ?";
+        $values[] = $version;
+        
+        error_log("SQL UPDATE VERSION: " . $sql . " avec params: [" . implode(', ', $values) . "]");
         
         $stmt = $this->pdo->prepare($sql);
-        $stmt->execute(array_values($insertData));
+        $stmt->execute($values);
         
-        $newVersion = $oldVersion['version'] + 1;
+        $rowCount = $stmt->rowCount();
+        error_log("SQL UPDATE VERSION: " . $rowCount . " ligne(s) affectée(s)");
         
-        // Log d'audit
-        $this->logAudit($table, $entry, 'update', $oldVersion, $data);
-        
-        return $newVersion;
+        return $rowCount > 0;
     }
     
     /**
-     * Supprimer une entité (marquer comme deleted)
+     * Supprimer une entrée
      * @param string $table - Nom de la table
      * @param int $entry - ID de l'entité
+     * @return bool - Succès de l'opération
      */
-    public function deleteEntity($table, $entry) {
-        // Récupérer la version actuelle
-        $currentVersion = $this->getCurrentVersion($table, $entry);
-        if (!$currentVersion) {
-            throw new Exception('Entité non trouvée');
-        }
+    public function deleteEntry($table, $entry) {
+        $sql = "DELETE FROM {$table} WHERE entry = ?";
         
-        // Marquer comme deleted (plus de version current)
-        $stmt = $this->pdo->prepare("
-            UPDATE {$table} 
-            SET status = 'deleted' 
-            WHERE entry = ? AND status = 'current'
-        ");
+        $stmt = $this->pdo->prepare($sql);
         $stmt->execute([$entry]);
         
-        // Log d'audit
-        $this->logAudit($table, $entry, 'delete', $currentVersion, null);
+        return $stmt->rowCount() > 0;
     }
     
     /**
@@ -129,7 +146,7 @@ class VersioningRepository extends BaseRepository {
      * @param int $entry - ID de l'entité
      * @return array - Historique des versions
      */
-    public function getEntityHistory($table, $entry) {
+    public function getEntityVersions($table, $entry) {
         $stmt = $this->pdo->prepare("
             SELECT * FROM {$table} 
             WHERE entry = ? 
@@ -144,7 +161,7 @@ class VersioningRepository extends BaseRepository {
      * @param string $table - Nom de la table
      * @param int $entry - ID de l'entité
      */
-    public function deprecateOldVersion($table, $entry) {
+    public function deprecateVersion($table, $entry) {
         $stmt = $this->pdo->prepare("
             UPDATE {$table} 
             SET status = 'deprecated' 
@@ -153,103 +170,5 @@ class VersioningRepository extends BaseRepository {
         $stmt->execute([$entry]);
     }
     
-    /**
-     * Logging des actions pour audit
-     * @param string $table - Nom de la table
-     * @param int $recordId - ID de l'enregistrement
-     * @param string $action - Action effectuée
-     * @param array|null $oldData - Anciennes données
-     * @param array|null $newData - Nouvelles données
-     */
-    public function logAudit($table, $recordId, $action, $oldData = null, $newData = null) {
-        try {
-            $stmt = $this->pdo->prepare("
-                INSERT INTO audit_log (table_name, record_entry, action, old_values, new_values, user, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, NOW())
-            ");
-            
-            $stmt->execute([
-                $table,
-                $recordId,
-                $action,
-                $oldData ? json_encode($oldData) : null,
-                $newData ? json_encode($newData) : null,
-                $this->currentUser['id']
-            ]);
-        } catch (Exception $e) {
-            // Log d'audit ne doit pas faire échouer l'opération principale
-            error_log("Erreur audit log: " . $e->getMessage());
-        }
-    }
-    
-    /**
-     * Préparer les données pour l'insertion
-     * @param string $table - Nom de la table
-     * @param array $data - Données brutes
-     * @param array $options - Options supplémentaires
-     * @return array - Données préparées
-     */
-    protected function prepareInsertData($table, $data, $options = []) {
-        $insertData = [
-            'version' => 1,
-            'created_by' => $this->currentUser['id'],
-            'status' => 'current'
-        ];
-        
-        // Ajouter les données personnalisées
-        foreach ($data as $key => $value) {
-            if ($value !== null) {
-                $insertData[$key] = Helpers::sanitize($value);
-            }
-        }
-        
-        // Ajouter les options personnalisées
-        if (isset($options['additional_fields'])) {
-            foreach ($options['additional_fields'] as $key => $value) {
-                $insertData[$key] = $value;
-            }
-        }
-        
-        return $insertData;
-    }
-    
-    /**
-     * Préparer les données pour la mise à jour
-     * @param string $table - Nom de la table
-     * @param int $entry - ID de l'entité
-     * @param array $data - Données brutes
-     * @param array $oldVersion - Ancienne version
-     * @param array $options - Options supplémentaires
-     * @return array - Données préparées
-     */
-    protected function prepareUpdateData($table, $entry, $data, $oldVersion, $options = []) {
-        $insertData = [
-            'entry' => $entry,
-            'version' => $oldVersion['version'] + 1,
-            'created_by' => $this->currentUser['id'],
-            'status' => 'current'
-        ];
-        
-        // Fusionner les anciennes données avec les nouvelles
-        $mergedData = array_merge($oldVersion, $data);
-        
-        // Ajouter les données fusionnées
-        foreach ($mergedData as $key => $value) {
-            // Ignorer les champs système
-            if (!in_array($key, ['entry', 'version', 'created_by', 'status', 'created_at'])) {
-                if ($value !== null) {
-                    $insertData[$key] = Helpers::sanitize($value);
-                }
-            }
-        }
-        
-        // Ajouter les options personnalisées
-        if (isset($options['additional_fields'])) {
-            foreach ($options['additional_fields'] as $key => $value) {
-                $insertData[$key] = $value;
-            }
-        }
-        
-        return $insertData;
-    }
+
 } 
