@@ -39,6 +39,7 @@ export function formatActivityNameOnly(rawName) {
  * @param {string} activity.icon - L'icône de l'activité
  * @param {Object} [options] - Options d'affichage
  * @param {boolean} [options.hideType] - Si true, n'affiche pas le type
+ * @param {boolean} [options.hideIcon] - Si true, n'affiche pas l'icône
  * @returns {string} Le nom formaté
  */
 export function formatActivityName(activity, options = {}) {
@@ -46,9 +47,19 @@ export function formatActivityName(activity, options = {}) {
     const rawType = activity.type || 'Activité';
     const icon = activity.icon || '📋';
     const name = formatActivityNameOnly(rawName);
+    
+    // Si on cache le type
     if (options.hideType) {
-        return `${icon} ${name}`;
+        return options.hideIcon ? name : `${icon} ${name}`;
     }
+    
+    // Si on cache l'icône
+    if (options.hideIcon) {
+        const type = formatTypeName(rawType);
+        return `${type} ${name}`;
+    }
+    
+    // Affichage complet par défaut
     const type = formatTypeName(rawType);
     return `${icon} ${type} ${name}`;
 }

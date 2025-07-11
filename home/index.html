@@ -7,6 +7,7 @@
     <base href="/home/">
     <link rel="stylesheet" href="../shared/css/app-header.css">
     <link rel="stylesheet" href="/shared/css/shared.css">
+    <link rel="stylesheet" href="index.css">
     <style>
         :root {
             --app-accent-color: #2e7d32; /* Vert pour la page d'accueil Team Apps */
@@ -20,23 +21,6 @@
         
         #loginSection {
             overflow: hidden;
-        }
-        
-        .app-card-taches {
-            background: #1976d2;
-            color: white;
-            border-color: #1976d2;
-        }
-        
-        .app-card-taches:hover {
-            background: #1565c0;
-            border-color: #1565c0;
-            box-shadow: 0 4px 16px rgba(25, 118, 210, 0.3);
-        }
-        
-        .app-card-taches .app-card-content h2,
-        .app-card-taches .app-card-content p {
-            color: white;
         }
         
         .password-help-toggle {
@@ -78,6 +62,7 @@
         <div class="header-content">
             <h1 class="heading-title">📊 Team Apps</h1>
             <div class="header-info">
+                <div class="user-info" id="currentUser"></div>
                 <button class="btn btn-outline" style="visibility: hidden;">placeholder</button>
             </div>
         </div>
@@ -112,7 +97,7 @@
                         </div>
                     </div>
                 </div>
-                <button type="submit" class="btn-primary">Se connecter</button>
+                <button type="submit" class="btn" style="width: 100%;">Se connecter</button>
                 <div id="loginStatus"></div>
             </form>
         </div>

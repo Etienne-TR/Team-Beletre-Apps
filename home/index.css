@@ -1,0 +1,132 @@
+/* ========================================
+   PAGE D'ACCUEIL - STYLES SPÉCIFIQUES
+   ========================================
+   
+   Styles pour le conteneur d'applications et les cartes
+   d'applications de la page d'accueil Team Apps.
+   ======================================== */
+
+/* Conteneur principal des applications */
+.apps-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: var(--gap-large);
+    padding: var(--padding-large);
+    max-width: var(--max-content-width);
+    margin: 0 auto;
+}
+
+/* Cartes d'applications */
+.app-card {
+    background: var(--background-lightest);
+    border: var(--border-width-fine) solid var(--border-color);
+    border-radius: var(--border-radius-large);
+    padding: var(--padding-large);
+    cursor: pointer;
+    transition: var(--transition-normal);
+    display: flex;
+    align-items: center;
+    gap: var(--gap-medium);
+    box-shadow: var(--shadow-light);
+    text-decoration: none;
+    color: var(--text-color);
+    max-width: 400px;
+}
+
+.app-card:hover {
+    transform: var(--transform-hover);
+    box-shadow: var(--shadow-medium);
+    border-color: var(--hover-border-color);
+}
+
+.app-card:active {
+    transform: var(--transform-active);
+    box-shadow: var(--shadow-heavy);
+}
+
+/* Icône de la carte d'application */
+.app-card-icon {
+    font-size: var(--font-size-large);
+    flex-shrink: 0;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--background-lighter);
+    border-radius: var(--border-radius);
+}
+
+/* Contenu de la carte d'application */
+.app-card-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.app-card-content h2 {
+    font-family: var(--font-family-title);
+    font-size: var(--font-size-medium);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-emphasis);
+    margin: 0 0 var(--margin-tight) 0;
+    line-height: var(--line-height-tight);
+}
+
+.app-card-content p {
+    font-family: var(--font-family-content);
+    font-size: var(--font-size-normal);
+    font-weight: var(--font-weight-normal);
+    color: var(--text-muted);
+    margin: 0;
+    line-height: var(--line-height-normal);
+}
+
+/* Variante spéciale pour la carte "Tâches et responsabilités" */
+.app-card-taches {
+    background: #1976d2;
+    color: white;
+    border-color: #1976d2;
+}
+
+.app-card-taches:hover {
+    background: #1565c0;
+    border-color: #1565c0;
+    box-shadow: 0 4px 16px rgba(25, 118, 210, 0.3);
+}
+
+.app-card-taches .app-card-content h2,
+.app-card-taches .app-card-content p {
+    color: white;
+}
+
+.app-card-taches .app-card-icon {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .apps-container {
+        grid-template-columns: 1fr;
+        gap: var(--gap-medium);
+        padding: var(--padding-medium);
+    }
+    
+    .app-card {
+        padding: var(--padding-medium);
+    }
+    
+    .app-card-icon {
+        width: 50px;
+        height: 50px;
+        font-size: var(--font-size-medium);
+    }
+    
+    .app-card-content h2 {
+        font-size: var(--font-size-normal);
+    }
+    
+    .app-card-content p {
+        font-size: var(--font-size-small);
+    }
+} 

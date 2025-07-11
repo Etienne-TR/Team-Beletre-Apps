@@ -33,14 +33,14 @@ class ActivityController extends BaseAPI {
             case 'get':
                 $this->getActivity();
                 break;
-            case 'create':
-                $this->createActivity();
+            case 'createEntry':
+                $this->createEntryActivity();
                 break;
-            case 'update':
-                $this->updateActivity();
+            case 'updateVersionActivity':
+                $this->updateVersionActivity();
                 break;
-            case 'delete':
-                $this->deleteActivity();
+            case 'deleteEntry':
+                $this->deleteEntryActivity();
                 break;
             case 'history':
                 $this->getHistory();
@@ -53,9 +53,20 @@ class ActivityController extends BaseAPI {
             case 'get_activity_tasks':
                 $this->getActivityTasks();
                 break;
+            case 'create_entry_task':
+                $this->createEntryTask();
+                break;
 
             case 'update_assigned_to':
                 $this->updateAssignedTo();
+                break;
+
+            case 'updateVersionTask':
+                $this->updateVersionTask();
+                break;
+                
+            case 'deleteEntryTask':
+                $this->deleteEntryTask();
                 break;
 
             
@@ -113,12 +124,12 @@ class ActivityController extends BaseAPI {
     /**
      * Créer une nouvelle activité
      */
-    private function createActivity() {
+    private function createEntryActivity() {
         try {
             $this->requireMethod('POST');
             
             $data = $this->getJsonInput();
-            $result = $this->activityService->createActivity($data, $this->currentUser['id']);
+            $result = $this->activityService->createEntryActivity($data, $this->currentUser['id']);
             
             $this->sendSuccess($result, 'Activité créée avec succès');
             
@@ -150,9 +161,31 @@ class ActivityController extends BaseAPI {
     }
     
     /**
-     * Supprimer une activité
+     * Mettre à jour une version d'activité
      */
-    private function deleteActivity() {
+    private function updateVersionActivity() {
+        try {
+            $this->requireMethod('POST');
+            
+            $version = $_GET['version'] ?? '';
+            if (empty($version)) {
+                $this->sendError('Version requise');
+            }
+            
+            $data = $this->getJsonInput();
+            $result = $this->activityService->updateVersionActivity($version, $data);
+            
+            $this->sendSuccess($result, 'Version d\'activité mise à jour avec succès');
+            
+        } catch (Exception $e) {
+            $this->sendError('Erreur lors de la mise à jour de la version: ' . $e->getMessage(), $e->getCode() ?: 500);
+        }
+    }
+    
+    /**
+     * Supprimer une activité (toutes les versions de l'entry)
+     */
+    private function deleteEntryActivity() {
         try {
             $this->requireMethod('DELETE');
             
@@ -161,7 +194,7 @@ class ActivityController extends BaseAPI {
                 $this->sendError('Entry requis');
             }
             
-            $this->activityService->deleteActivity($entry, $this->currentUser['id']);
+            $this->activityService->deleteEntryActivity($entry);
             $this->sendSuccess(null, 'Activité supprimée avec succès');
             
         } catch (Exception $e) {
@@ -228,6 +261,42 @@ class ActivityController extends BaseAPI {
         }
     }
     
+    /**
+     * Créer une nouvelle tâche pour une activité
+     */
+    private function createEntryTask() {
+        try {
+            $this->requireMethod('POST');
+            
+            $data = $this->getJsonInput();
+            
+            // Debug: logger les données reçues
+            error_log('createEntryTask - Données reçues: ' . json_encode($data));
+            
+            $name = $data['name'] ?? '';
+            $description = $data['description'] ?? '';
+            $activity = $data['activity'] ?? '';
+            
+            // Debug: logger les valeurs extraites
+            error_log('createEntryTask - name: ' . $name);
+            error_log('createEntryTask - description: ' . $description);
+            error_log('createEntryTask - activity: ' . $activity);
+            error_log('createEntryTask - currentUser: ' . json_encode($this->currentUser));
+            
+            if (empty($name) || empty($activity)) {
+                $this->sendError('Nom et activité requis');
+            }
+            
+            $result = $this->activityService->createEntryTask($name, $description, $activity, $this->currentUser['id']);
+            $this->sendSuccess($result, 'Tâche créée avec succès');
+            
+        } catch (Exception $e) {
+            error_log('createEntryTask - Exception: ' . $e->getMessage());
+            error_log('createEntryTask - Stack trace: ' . $e->getTraceAsString());
+            $this->sendError('Erreur lors de la création de la tâche: ' . $e->getMessage(), $e->getCode() ?: 500);
+        }
+    }
+    
 
     
     /**
@@ -249,6 +318,48 @@ class ActivityController extends BaseAPI {
             
         } catch (Exception $e) {
             $this->sendError('Erreur lors de la mise à jour: ' . $e->getMessage(), $e->getCode() ?: 500);
+        }
+    }
+    
+    /**
+     * Mettre à jour une version de tâche
+     */
+    private function updateVersionTask() {
+        try {
+            $this->requireMethod('POST');
+            
+            $version = $_GET['version'] ?? '';
+            if (empty($version)) {
+                $this->sendError('Version requise');
+            }
+            
+            $data = $this->getJsonInput();
+            $result = $this->activityService->updateVersionTask($version, $data);
+            
+            $this->sendSuccess($result, 'Version de tâche mise à jour avec succès');
+            
+        } catch (Exception $e) {
+            $this->sendError('Erreur lors de la mise à jour de la version de tâche: ' . $e->getMessage(), $e->getCode() ?: 500);
+        }
+    }
+    
+    /**
+     * Supprimer une tâche (toutes les versions de l'entry)
+     */
+    private function deleteEntryTask() {
+        try {
+            $this->requireMethod('DELETE');
+            
+            $entry = $_GET['entry'] ?? '';
+            if (empty($entry)) {
+                $this->sendError('Entry requis');
+            }
+            
+            $this->activityService->deleteEntryTask($entry);
+            $this->sendSuccess(null, 'Tâche supprimée avec succès');
+            
+        } catch (Exception $e) {
+            $this->sendError('Erreur lors de la suppression de la tâche: ' . $e->getMessage(), $e->getCode() ?: 500);
         }
     }
     

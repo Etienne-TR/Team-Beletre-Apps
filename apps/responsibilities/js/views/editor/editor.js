@@ -32,6 +32,10 @@ import { showReviseResponsibleForModal, validateReviseResponsibleForForm, saveRe
 import { showReviseAssignedToModal, validateReviseAssignedToForm, saveAssignment } from './revise-assigned-to.js';
 import { showCreateResponsibleForModal, validateCreateResponsibleForForm, createResponsibleFor, loadAvailableUsers } from './create-responsible-for.js';
 import { showCreateAssignedToModal, loadAvailableUsers as loadAvailableUsersForAssignment } from './create-assigned-to.js';
+import { showCreateEntryTaskModal, createEntryTask } from './create-entry-task.js';
+import { showCreateActivityModal, createEntryActivity } from './create-activity.js';
+import { showReviseActivityModal, validateReviseActivityForm, saveActivity, deleteActivity } from './revise-activity.js';
+import { showReviseTaskModal, validateReviseTaskForm, saveTask, deleteTask } from './revise-task.js';
 
 // Variables globales
 let availableTypes = [];
@@ -887,8 +891,44 @@ function createNewActivityCard() {
 
     // Événement de clic pour créer une nouvelle activité
     card.addEventListener('click', () => {
-        // Pour l'instant, afficher un message à l'utilisateur
-        showMessage('La création d\'activité n\'est pas encore disponible dans cette nouvelle interface', 'info');
+        // Trouver le type d'activité sélectionné dans availableTypes
+        const selectedType = getSelectedActivityType();
+        const activityType = availableTypes.find(type => type.type_name === selectedType);
+        
+        if (activityType) {
+            // Ouvrir la modal de création d'activité avec les informations du type
+            showCreateActivityModal(
+                // Callback de sauvegarde
+                async (formData) => {
+                    console.log('Sauvegarde de la nouvelle activité:', formData);
+                    
+                    try {
+                        // Ajouter les informations du type à formData
+                        const activityData = {
+                            ...formData,
+                            type: activityType.type_name
+                        };
+                        
+                        // Utiliser la fonction createEntryActivity
+                        const result = await createEntryActivity(activityData);
+                        console.log('Résultat de la création:', result);
+                        showMessage('Activité créée avec succès', 'success');
+                        
+                        // Recharger les activités
+                        await loadActivities();
+                        displayActivities();
+                        
+                    } catch (error) {
+                        console.error('Erreur lors de la création:', error);
+                        showMessage('Erreur lors de la création: ' + error.message, 'error');
+                    }
+                },
+                // Passer les informations du type pour le titre de la modal
+                activityType
+            );
+        } else {
+            showMessage('Erreur: Type d\'activité non trouvé', 'error');
+        }
     });
 
     return card;
@@ -1687,8 +1727,38 @@ async function handleAddResponsibleClick(activity) {
 async function handleAddTaskClick(activity) {
     console.log('Clic sur "Ajouter une tâche" pour l\'activité:', activity);
     
-    // Pour l'instant, afficher un message à l'utilisateur
-    showMessage('La création de tâche n\'est pas encore disponible dans cette interface', 'info');
+    // Ouvrir le modal de création de tâche
+    showCreateEntryTaskModal(activity, 
+        // Callback de sauvegarde
+        async (activity, formData) => {
+            console.log('Sauvegarde de la nouvelle tâche:', formData);
+            
+            try {
+                // Utiliser la fonction createEntryTask
+                const result = await createEntryTask(activity, formData);
+                console.log('Résultat de l\'ajout:', result);
+                showMessage('Tâche créée avec succès', 'success');
+                
+                // Recharger les données de la carte d'activité après sauvegarde
+                const activityCard = document.querySelector(`[data-activity-id="${activity.entry}"]`);
+                if (activityCard) {
+                    const detailsContent = activityCard.querySelector('.activity-details-content');
+                    if (detailsContent) {
+                        // Recharger les tâches
+                        const tasksContent = detailsContent.querySelector('#tasks-tab-content');
+                        if (tasksContent) {
+                            // Réinitialiser le flag pour forcer le rechargement
+                            activityCard.dataset.tasksLoaded = 'false';
+                            loadTasksData(activityCard, activity, tasksContent);
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Erreur lors de l\'ajout:', error);
+                showMessage('Erreur lors de l\'ajout: ' + error.message, 'error');
+            }
+        }
+    );
 }
 
 /**
@@ -1712,11 +1782,11 @@ async function handleAddWorkerClick(task) {
             console.log('Assignation créée avec succès:', formData);
             
             // Recharger les assignations de la tâche
-            const taskCard = document.querySelector(`[data-task-id="${task.task_id}"]`);
+            const taskCard = document.querySelector(`[data-task-id="${task.entry}"]`);
             if (taskCard) {
                 const assignmentsContainer = taskCard.querySelector('.content-cards-container');
                 if (assignmentsContainer) {
-                    await loadTaskAssignments(task.task_id, assignmentsContainer);
+                    await loadTaskAssignments(task.entry, assignmentsContainer);
                 }
             }
         });
@@ -1734,8 +1804,76 @@ async function handleAddWorkerClick(task) {
 async function handleEditTaskClick(task) {
     console.log('Clic sur le crayon d\'édition pour la tâche:', task);
     
-    // Pour l'instant, afficher un message à l'utilisateur
-    showMessage('L\'édition de tâche n\'est pas encore disponible dans cette interface', 'info');
+    // Ouvrir le modal d'édition avec le nouveau formulaire
+    showReviseTaskModal(task, 
+        // Callback de sauvegarde
+        async (task, formData) => {
+            console.log('Sauvegarde de la tâche:', formData);
+            
+            // Valider les données
+            const validation = validateReviseTaskForm(formData);
+            if (!validation.isValid) {
+                showMessage('Erreur de validation: ' + validation.errors.join(', '), 'error');
+                return;
+            }
+            
+            try {
+                // Utiliser la nouvelle fonction saveTask
+                const result = await saveTask(task, formData);
+                console.log('Résultat de la sauvegarde:', result);
+                showMessage('Tâche mise à jour avec succès', 'success');
+                
+                // Recharger les données de la carte d'activité après sauvegarde
+                const activityCard = document.querySelector(`[data-activity-id="${task.activity}"]`);
+                if (activityCard) {
+                    const detailsContent = activityCard.querySelector('.activity-details-content');
+                    if (detailsContent) {
+                        // Recharger les tâches
+                        const tasksContent = detailsContent.querySelector('#tasks-tab-content');
+                        if (tasksContent) {
+                            // Réinitialiser le flag pour forcer le rechargement
+                            activityCard.dataset.tasksLoaded = 'false';
+                            // Trouver l'activité complète dans le tableau activities
+                            const activity = activities.find(a => a.entry === task.activity);
+                            if (activity) {
+                                loadTasksData(activityCard, activity, tasksContent);
+                            } else {
+                                console.error('Activité non trouvée pour le rechargement:', task.activity);
+                            }
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Erreur lors de la sauvegarde:', error);
+                showMessage('Erreur lors de la sauvegarde: ' + error.message, 'error');
+            }
+        },
+        // Callback de suppression
+        async (task) => {
+            console.log('Suppression de la tâche:', task);
+            
+            // Recharger les données de la carte d'activité après suppression
+            const activityCard = document.querySelector(`[data-activity-id="${task.activity}"]`);
+            if (activityCard) {
+                const detailsContent = activityCard.querySelector('.activity-details-content');
+                if (detailsContent) {
+                    // Recharger les tâches
+                    const tasksContent = detailsContent.querySelector('#tasks-tab-content');
+                    if (tasksContent) {
+                        // Réinitialiser le flag pour forcer le rechargement
+                        activityCard.dataset.tasksLoaded = 'false';
+                        // Trouver l'activité complète dans le tableau activities
+                        const activity = activities.find(a => a.entry === task.activity);
+                        if (activity) {
+                            loadTasksData(activityCard, activity, tasksContent);
+                        } else {
+                            console.error('Activité non trouvée pour le rechargement:', task.activity);
+                        }
+                    }
+                }
+            }
+        }
+    );
 }
 
 /**
@@ -1745,8 +1883,54 @@ async function handleEditTaskClick(task) {
 async function handleEditActivityClick(activity) {
     console.log('Clic sur le crayon d\'édition pour l\'activité:', activity);
     
-    // Pour l'instant, afficher un message à l'utilisateur
-    showMessage('L\'édition d\'activité n\'est pas encore disponible dans cette interface', 'info');
+    // Ouvrir le modal d'édition avec le nouveau formulaire
+    showReviseActivityModal(activity, 
+        // Callback de sauvegarde
+        async (activity, formData) => {
+            console.log('Sauvegarde de l\'activité:', formData);
+            
+            // Valider les données
+            const validation = validateReviseActivityForm(formData);
+            if (!validation.isValid) {
+                showMessage('Erreur de validation: ' + validation.errors.join(', '), 'error');
+                return;
+            }
+            
+            try {
+                // Utiliser la nouvelle fonction saveActivity
+                const result = await saveActivity(activity, formData);
+                console.log('Résultat de la sauvegarde:', result);
+                showMessage('Activité mise à jour avec succès', 'success');
+                
+                // Recharger les activités après sauvegarde
+                await loadActivities();
+                displayActivities();
+                
+            } catch (error) {
+                console.error('Erreur lors de la sauvegarde:', error);
+                showMessage('Erreur lors de la sauvegarde: ' + error.message, 'error');
+            }
+        },
+        // Callback de suppression
+        async (activity) => {
+            console.log('Suppression de l\'activité:', activity);
+            
+            try {
+                // Utiliser la fonction deleteActivity
+                const result = await deleteActivity(activity);
+                console.log('Résultat de la suppression:', result);
+                showMessage('Activité supprimée avec succès', 'success');
+                
+                // Recharger les activités après suppression
+                await loadActivities();
+                displayActivities();
+                
+            } catch (error) {
+                console.error('Erreur lors de la suppression:', error);
+                showMessage('Erreur lors de la suppression: ' + error.message, 'error');
+            }
+        }
+    );
 }
 
 /**
@@ -1795,7 +1979,7 @@ function createAssignedWorkerItem(assignment) {
 function createTaskViewItem(task) {
     const item = document.createElement('div');
     item.className = 'content-card content-card--subgroup content-card--nested';
-    item.dataset.taskId = task.task_id;
+    item.dataset.taskId = task.entry;
     item.style.cursor = 'default';
     
     // En-tête de la carte avec nom et période
@@ -1909,14 +2093,14 @@ async function toggleTaskCard(card, task, assignmentsContainer) {
             card.classList.add('expanded');
         }
         
-        // Charger les assignations si pas encore fait
-        if (!card.dataset.assignmentsLoaded) {
-            loadTaskAssignments(task.task_id, assignmentsContainer);
-            card.dataset.assignmentsLoaded = 'true';
-        }
-        
-        // Mettre à jour le store
-        setExpandedTaskCard(task.task_id);
+                        // Charger les assignations si pas encore fait
+                if (!card.dataset.assignmentsLoaded) {
+                    loadTaskAssignments(task.entry, assignmentsContainer);
+                    card.dataset.assignmentsLoaded = 'true';
+                }
+                
+                // Mettre à jour le store
+                setExpandedTaskCard(task.entry);
     }
 }
 

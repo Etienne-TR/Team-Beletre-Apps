@@ -1,0 +1,114 @@
+/* Styles d'impression pour la fiche de poste */
+.print {
+    font-family: var(--font-family);
+    margin: var(--margin-large);
+    line-height: var(--line-height-normal);
+}
+
+.print h1 {
+    color: var(--text-color);
+    margin-bottom: var(--margin-medium);
+    font-size: 24px;
+    font-weight: var(--font-weight-semibold);
+    text-align: center;
+}
+
+.print h2 {
+    color: var(--text-emphasis);
+    margin-top: var(--margin-large);
+    margin-bottom: var(--gap-large);
+    font-size: 20px;
+    font-weight: var(--font-weight-bold);
+    text-align: center;
+    border-bottom: var(--border-width-fine) solid var(--text-light);
+    padding-bottom: var(--padding-tight);
+}
+
+.print h3 {
+    color: var(--text-color);
+    margin-top: var(--margin-large);
+    margin-bottom: var(--margin-tight);
+    font-size: 20px;
+    font-weight: var(--font-weight-bold);
+}
+
+.print p {
+    margin: var(--padding-medium) 0;
+    line-height: var(--line-height-relaxed);
+}
+
+.print em {
+    font-style: italic;
+    color: var(--text-emphasis);
+}
+
+.print strong {
+    font-weight: var(--font-weight-semibold);
+}
+
+.print table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: var(--padding-tight) 0;
+    border: var(--border-width-fine) solid var(--text-color);
+    font-size: 16px;
+}
+
+.print thead {
+    background-color: var(--background-light);
+}
+
+.print tr {
+    border-bottom: var(--border-width-fine) solid var(--border-color);
+}
+
+.print th {
+    border: var(--border-width-fine) solid var(--text-color);
+    padding: var(--padding-tight);
+    text-align: left;
+    background-color: var(--background-light);
+    font-weight: var(--font-weight-semibold);
+}
+
+.print td {
+    border: var(--border-width-fine) solid var(--text-color);
+    padding: var(--padding-tight);
+    text-align: left;
+    vertical-align: top;
+}
+
+.print ul {
+    margin: var(--padding-medium) 0;
+    padding-left: var(--margin-large);
+}
+
+.print li {
+    margin: var(--margin-tight) 0;
+    line-height: var(--line-height-normal);
+}
+
+/* Styles pour l'impression */
+@media print {
+    .print {
+        margin: var(--margin-large);
+        font-size: 11px;
+    }
+    
+    .print h1 {
+        font-size: 16px;
+    }
+    
+    .print h2,
+    .print h3 {
+        font-size: 14px;
+    }
+    
+    .print table {
+        font-size: 11px;
+    }
+    
+    .print th,
+    .print td {
+        padding: var(--padding-tight);
+    }
+} 

@@ -106,7 +106,7 @@ class ActivityService {
     /**
      * Créer une nouvelle activité
      */
-    public function createActivity($data, $userId) {
+    public function createEntryActivity($data, $userId) {
         // Validation
         $rules = [
             'name' => ['required' => true, 'max_length' => 200],
@@ -131,7 +131,7 @@ class ActivityService {
         try {
             $this->pdo->beginTransaction();
             
-            $entry = $this->repository->createActivity($data, $activityTypeId, $userId);
+            $entry = $this->repository->createEntryActivity($data, $activityTypeId, $userId);
             
 
             
@@ -184,7 +184,8 @@ class ActivityService {
             
             // Créer la nouvelle version
             $newVersion = $oldVersion['version'] + 1;
-            $this->repository->updateActivity($entry, $data, $activityTypeId, $userId, $newVersion);
+            $data['activity_type'] = $activityTypeId;
+            $this->repository->updateVersionActivity($newVersion, $data);
             
 
             
@@ -199,28 +200,50 @@ class ActivityService {
     }
     
     /**
-     * Supprimer une activité
+     * Mettre à jour une version d'activité
      */
-    public function deleteActivity($entry, $userId) {
-        // Récupérer la version actuelle
+    public function updateVersionActivity($version, $data) {
+        // Validation
+        $rules = [
+            'name' => ['required' => true, 'max_length' => 200],
+            'activity_type' => ['required' => true],
+            'description' => ['max_length' => 1000],
+            'icon' => ['max_length' => 10],
+            'start_date' => ['type' => 'date'],
+            'end_date' => ['type' => 'date']
+        ];
+        
+        $errors = Validator::validateInput($data, $rules);
+        if (!empty($errors)) {
+            throw new Exception('Données invalides', 400);
+        }
+        
+        $result = $this->repository->updateVersionActivity($version, $data);
+        
+        if (!$result) {
+            throw new Exception('Erreur lors de la mise à jour de la version');
+        }
+        
+        return ['entry' => $result];
+    }
+    
+    /**
+     * Supprimer une activité (toutes les versions de l'entry)
+     */
+    public function deleteEntryActivity($entry) {
+        // Vérifier que l'activité existe
         $currentVersion = $this->versioningRepository->getCurrentVersion('activities', $entry);
         if (!$currentVersion) {
             throw new Exception('Activité non trouvée', 404);
         }
         
-        try {
-            $this->pdo->beginTransaction();
-            
-            $this->repository->deleteActivity($entry);
-            
-
-            
-            $this->pdo->commit();
-            
-        } catch (Exception $e) {
-            $this->pdo->rollback();
-            throw $e;
+        $result = $this->repository->deleteEntryActivity($entry);
+        
+        if (!$result) {
+            throw new Exception('Erreur lors de la suppression de l\'activité');
         }
+        
+        return true;
     }
     
     /**
@@ -247,11 +270,13 @@ class ActivityService {
         foreach ($activities as $activity) {
             $formattedActivities[] = [
                 'entry' => $activity['entry'],
+                'version' => $activity['version'],
                 'emoji' => $activity['activity_icon'] ?: '📋',
                 'name' => $activity['activity_name'],
                 'description' => $activity['activity_description'],
                 'start_date' => $activity['start_date'],
                 'end_date' => $activity['end_date'],
+                'activity_type' => $activity['activity_type'],
                 'type' => $activity['activity_type_name']
             ];
         }
@@ -288,6 +313,59 @@ class ActivityService {
         $types = $this->repository->getActivityTypes();
         
         return ['activity_types' => $types];
+    }
+    
+    /**
+     * Créer une nouvelle tâche pour une activité
+     */
+    public function createEntryTask($name, $description, $activity, $userId) {
+        // Debug: logger les paramètres reçus
+        error_log('ActivityService::createEntryTask - Paramètres reçus:');
+        error_log('  - name: ' . $name);
+        error_log('  - description: ' . $description);
+        error_log('  - activity: ' . $activity . ' (type: ' . gettype($activity) . ')');
+        error_log('  - userId: ' . $userId);
+        
+        // Validation
+        $rules = [
+            'name' => ['required' => true, 'max_length' => 200],
+            'description' => ['max_length' => 1000],
+            'activity' => ['required' => true, 'type' => 'integer']
+        ];
+        
+        $data = [
+            'name' => $name,
+            'description' => $description,
+            'activity' => $activity
+        ];
+        
+        error_log('ActivityService::createEntryTask - Données à valider: ' . json_encode($data));
+        
+        $errors = Validator::validateInput($data, $rules);
+        if (!empty($errors)) {
+            error_log('ActivityService::createEntryTask - Erreurs de validation: ' . json_encode($errors));
+            throw new Exception('Données invalides', 400);
+        }
+        
+        try {
+            error_log('ActivityService::createEntryTask - Début de la transaction');
+            $this->pdo->beginTransaction();
+            
+            error_log('ActivityService::createEntryTask - Appel du repository');
+            $taskEntry = $this->repository->createEntryTask($name, $description, $activity);
+            error_log('ActivityService::createEntryTask - Repository appelé, taskEntry: ' . $taskEntry);
+            
+            $this->pdo->commit();
+            error_log('ActivityService::createEntryTask - Transaction commitée');
+            
+            return ['task_entry' => $taskEntry];
+            
+        } catch (Exception $e) {
+            error_log('ActivityService::createEntryTask - Exception: ' . $e->getMessage());
+            error_log('ActivityService::createEntryTask - Stack trace: ' . $e->getTraceAsString());
+            $this->pdo->rollback();
+            throw $e;
+        }
     }
     
     /**
@@ -328,6 +406,51 @@ class ActivityService {
             $this->pdo->rollback();
             throw $e;
         }
+    }
+    
+    /**
+     * Mettre à jour une version de tâche
+     */
+    public function updateVersionTask($version, $data) {
+        // Validation
+        $rules = [
+            'name' => ['required' => true, 'max_length' => 200],
+            'description' => ['max_length' => 1000],
+            'start_date' => ['type' => 'date'],
+            'end_date' => ['type' => 'date']
+        ];
+        
+        $errors = Validator::validateInput($data, $rules);
+        if (!empty($errors)) {
+            throw new Exception('Données invalides', 400);
+        }
+        
+        $result = $this->repository->updateVersionTask($version, $data);
+        
+        if (!$result) {
+            throw new Exception('Erreur lors de la mise à jour de la version de tâche');
+        }
+        
+        return ['entry' => $result];
+    }
+    
+    /**
+     * Supprimer une tâche (toutes les versions de l'entry)
+     */
+    public function deleteEntryTask($entry) {
+        // Vérifier que la tâche existe
+        $currentVersion = $this->versioningRepository->getCurrentVersion('activity_tasks', $entry);
+        if (!$currentVersion) {
+            throw new Exception('Tâche non trouvée', 404);
+        }
+        
+        $result = $this->repository->deleteEntryTask($entry);
+        
+        if (!$result) {
+            throw new Exception('Erreur lors de la suppression de la tâche');
+        }
+        
+        return true;
     }
     
 

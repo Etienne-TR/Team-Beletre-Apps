@@ -5,9 +5,27 @@
  * Contient toutes les requêtes SQL spécialisées pour les activités
  */
 require_once __DIR__ . '/../common/base-repository.php';
+require_once __DIR__ . '/../common/versioning-repository.php';
 require_once __DIR__ . '/../../utils/common/helpers.php';
 
-class ActivityRepository extends BaseRepository {
+class ActivityRepository extends VersioningRepository {
+    
+    /**
+     * Créer une nouvelle tâche pour une activité
+     * @param string $name - Nom de la tâche
+     * @param string $description - Description de la tâche
+     * @param int $activity - ID de l'activité
+     * @return int - ID de la tâche créée
+     */
+    public function createEntryTask($name, $description, $activity) {
+        $data = [
+            'name' => Helpers::sanitize($name),
+            'description' => Helpers::sanitize($description),
+            'activity' => $activity
+        ];
+        
+        return $this->createEntry('activity_tasks', 'NOW()', $this->currentUser['id'], $data);
+    }
     
     /**
      * Lister toutes les activités actuelles avec filtres
@@ -150,59 +168,73 @@ class ActivityRepository extends BaseRepository {
     /**
      * Créer une nouvelle activité
      */
-    public function createActivity($data, $activityTypeId, $userId) {
-        $stmt = $this->pdo->prepare("
-            INSERT INTO activities (version, created_by, name, icon, description, activity_type, start_date, end_date, created_at)
-            VALUES (1, ?, ?, ?, ?, ?, ?, ?, NOW())
-        ");
+    public function createEntryActivity($data, $activityTypeId, $userId) {
+        $data = [
+            'name' => Helpers::sanitize($data['name']),
+            'description' => Helpers::sanitize($data['description'] ?? ''),
+            'icon' => Helpers::sanitize($data['icon'] ?? ''),
+            'activity_type' => $activityTypeId,
+            'start_date' => $data['start_date'] ?: null,
+            'end_date' => $data['end_date'] ?: null
+        ];
         
-        $this->executeQuery($stmt, [
-            $userId,
-            Helpers::sanitize($data['name']),
-            Helpers::sanitize($data['icon'] ?? ''),
-            Helpers::sanitize($data['description'] ?? ''),
-            $activityTypeId,
-            $data['start_date'] ?: null,
-            $data['end_date'] ?: null
-        ]);
-        
-        return $this->pdo->lastInsertId();
+        return $this->createEntry('activities', 'NOW()', $userId, $data);
     }
     
     /**
-     * Mettre à jour une activité (création d'une nouvelle version)
+     * Mettre à jour une version d'activité
      */
-    public function updateActivity($entry, $data, $activityTypeId, $userId, $newVersion) {
-        $stmt = $this->pdo->prepare("
-            INSERT INTO activities (entry, version, created_by, name, icon, description, activity_type, start_date, end_date, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
-        ");
+    public function updateVersionActivity($version, $data) {
+        $updateData = [
+            'name' => Helpers::sanitize($data['name']),
+            'description' => Helpers::sanitize($data['description'] ?? ''),
+            'icon' => Helpers::sanitize($data['icon'] ?? ''),
+            'activity_type' => $data['activity_type'],
+            'start_date' => $data['start_date'] ?: null,
+            'end_date' => $data['end_date'] ?: null
+        ];
         
-        $this->executeQuery($stmt, [
-            $entry,
-            $newVersion,
-            $userId,
-            Helpers::sanitize($data['name']),
-            Helpers::sanitize($data['icon'] ?? ''),
-            Helpers::sanitize($data['description'] ?? ''),
-            $activityTypeId,
-            $data['start_date'] ?: null,
-            $data['end_date'] ?: null
-        ]);
+        $success = parent::updateVersion('activities', $version, $updateData);
         
-        return $newVersion;
+        if ($success) {
+            return $version; // entry = version pour les activités
+        }
+        
+        return false;
     }
     
     /**
-     * Supprimer une activité (marquer comme deleted)
+     * Mettre à jour une version de tâche
      */
-    public function deleteActivity($entry) {
-        $stmt = $this->pdo->prepare("
-            UPDATE activities 
-            SET status = 'deleted' 
-            WHERE entry = ? AND status = 'current'
-        ");
-        return $this->executeQuery($stmt, [$entry]);
+    public function updateVersionTask($version, $data) {
+        $updateData = [
+            'name' => Helpers::sanitize($data['name']),
+            'description' => Helpers::sanitize($data['description'] ?? ''),
+            'start_date' => $data['start_date'] ?: null,
+            'end_date' => $data['end_date'] ?: null
+        ];
+        
+        $success = parent::updateVersion('activity_tasks', $version, $updateData);
+        
+        if ($success) {
+            return $version; // entry = version pour les tâches
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Supprimer une tâche (toutes les versions de l'entry)
+     */
+    public function deleteEntryTask($entry) {
+        return parent::deleteEntry('activity_tasks', $entry);
+    }
+    
+    /**
+     * Supprimer une activité (toutes les versions de l'entry)
+     */
+    public function deleteEntryActivity($entry) {
+        return parent::deleteEntry('activities', $entry);
     }
     
     /**
@@ -226,11 +258,13 @@ class ActivityRepository extends BaseRepository {
         $query = "
             SELECT 
                 a.entry as entry,
+                a.version as version,
                 a.name as activity_name,
                 a.icon as activity_icon,
                 a.description as activity_description,
                 a.start_date,
                 a.end_date,
+                a.activity_type as activity_type,
                 at.name as activity_type_name
             FROM activities a
             LEFT JOIN activity_types at ON a.activity_type = at.entry AND at.status = 'current'
@@ -258,13 +292,15 @@ class ActivityRepository extends BaseRepository {
     public function getActivityTasks($activity, $date) {
         $stmt = $this->pdo->prepare("
             SELECT 
-                at.entry as task_id,
+                at.entry as entry,
+                at.version as version,
                 at.name as task_name,
                 at.description as task_description,
                 at.start_date,
                 at.end_date,
                 at.created_at,
-                at.created_by
+                at.created_by,
+                at.activity as activity
             FROM activity_tasks at
             WHERE at.activity = ? 
             AND at.status = 'current'

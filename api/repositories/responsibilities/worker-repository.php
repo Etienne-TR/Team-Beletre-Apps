@@ -16,6 +16,8 @@ class WorkerRepository extends BaseRepository {
             SELECT DISTINCT 
                 u.id,
                 u.display_name,
+                u.first_name,
+                u.last_name,
                 u.initials,
                 u.email,
                 wc.type as contract_type,

@@ -1,9 +1,6 @@
 // Import des modules partagés
-// Note: Les imports ES6 ne fonctionnent pas sans type="module", 
-// donc nous utilisons des fonctions locales pour l'instant
-
-// Import du store global pour l'instancier en amont
 import { globalStore } from '/modules/store/store.js';
+import { updateUserInfo } from '/modules/components/user-info.js';
 
 async function checkAuth() {
     try {
@@ -21,6 +18,9 @@ async function checkAuth() {
             throw new Error('Authentification échouée');
         }
         
+        // Stocker l'utilisateur dans le store global
+        globalStore.setUser(result.user);
+        
         return result.user;
         
     } catch (error) {
@@ -28,12 +28,10 @@ async function checkAuth() {
     }
 }
 
-function initializeUserInfo() {
-    // Initialisation des informations utilisateur
-    const userInfoDiv = document.getElementById('currentUser');
-    if (userInfoDiv) {
-        // Logique d'affichage des informations utilisateur
-        userInfoDiv.innerHTML = '<span>Utilisateur connecté</span>';
+function initializeUserInfo(user) {
+    // Utiliser le module partagé pour afficher les informations utilisateur
+    if (user) {
+        updateUserInfo(user);
     }
 }
 
@@ -138,6 +136,8 @@ async function handleLogin(event) {
         const result = await response.json();
         
         if (result.success) {
+            // Stocker l'utilisateur dans le store global
+            globalStore.setUser(result.user);
             // Supprimer le message de succès et passer directement au dashboard
             showDashboard(result.user);
         } else {
@@ -164,7 +164,7 @@ function showDashboard(user) {
     `;
     
     // Utiliser le module partagé pour afficher les informations utilisateur
-    initializeUserInfo();
+    initializeUserInfo(user);
     
     // Réattacher l'événement de déconnexion
     const logoutButton = document.querySelector('.btn-outline');

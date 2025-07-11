@@ -30,7 +30,9 @@ import {
 } from '../../components/activity-card.js';
 import { cache } from '/modules/cache/cache.js';
 import { DateSelector } from '/modules/components/date-selector.js';
-import { formatDateForAPI } from '/modules/utils/date-utils.js';
+import { showModal } from '/modules/components/modal.js';
+import { formatDateForAPI, formatDateLiterary } from '/modules/utils/date-utils.js';
+import { formatActivityName } from '/modules/utils/activity-formatter.js';
 
 // Variables spécifiques à la vue des travailleurs
 let selectedWorkerId = null; // ID du travailleur sélectionné
@@ -71,6 +73,11 @@ export async function initializeWorkerView(viewContainer) {
                 <button class="btn" data-content="tasks">Autres</button>
             </div>
             <div class="spacer"></div>
+            <div class="print-button-container">
+                <button id="printButton" class="btn btn-icon" title="Imprimer">
+                    🖨️
+                </button>
+            </div>
         `;
         // Ajout dynamique du conteneur du sélecteur de date à la fin des filtres
         const dateSelectorContainer = document.createElement('div');
@@ -161,6 +168,15 @@ function setupEventListeners() {
                 selectedWorkerId = null;
                 clearWorkerActivities();
             }
+        });
+    }
+    
+    // Gestion du bouton d'impression
+    const printButton = document.getElementById('printButton');
+    if (printButton) {
+        printButton.addEventListener('click', function() {
+            console.log('Bouton d\'impression cliqué');
+            handlePrintAction();
         });
     }
 }
@@ -616,4 +632,450 @@ function setupSelectedDateChangeListener() {
     // Ajouter l'écouteur
     addEventListener('selectedDate', selectedDateChangeListener);
 }
+
+/**
+ * Gérer l'action d'impression
+ */
+async function handlePrintAction() {
+    if (!selectedWorkerId) {
+        showMessage('Veuillez sélectionner un travailleur avant d\'imprimer', 'warning');
+        return;
+    }
+    
+    console.log('Action d\'impression pour le travailleur:', selectedWorkerId);
+    
+    // Récupérer les informations du travailleur
+    const dateStr = formatDateForAPI(getSelectedDate());
+    const workers = workersData[dateStr] || [];
+    const userInfo = workers.find(worker => String(worker.id) === String(selectedWorkerId));
+    
+    if (!userInfo) {
+        showMessage('Impossible de récupérer les informations du travailleur', 'error');
+        return;
+    }
+    
+    // Charger les activités en responsabilité
+    const responsibleActivities = await loadWorkerActivitiesResponsible(selectedWorkerId, getSelectedDate());
+    
+    // Charger les activités non-responsable
+    const notResponsibleActivities = await loadWorkerActivitiesNotResponsible(selectedWorkerId, getSelectedDate());
+    
+    // Créer le contenu HTML de la fiche de poste
+    const ficheContent = createFichePosteHTML(userInfo, getSelectedDate(), responsibleActivities, notResponsibleActivities);
+    
+    // Créer le contenu HTML avec le CSS intégré
+    const ficheContentWithCSS = `
+        <style>
+            @import url('../../shared/css/variables.css');
+            @import url('../../shared/css/print.css');
+        </style>
+        ${ficheContent}
+    `;
+    
+    // Afficher le modal
+    const modal = showModal(ficheContentWithCSS, {
+        title: 'Fiche de poste',
+        width: '800px',
+        maxWidth: '90vw',
+        height: 'auto',
+        maxHeight: '90vh'
+    });
+    
+    // Ajouter la fonctionnalité de copie
+    setupCopyFunctionality();
+}
+
+/**
+ * Créer le HTML de la fiche de poste
+ */
+function createFichePosteHTML(userInfo, date, responsibleActivities, notResponsibleActivities) {
+    const dateLiterary = formatDateLiterary(date);
+    const firstName = userInfo.first_name || '';
+    const lastName = userInfo.last_name || '';
+    
+    // Utiliser first_name et last_name si disponibles, sinon fallback sur display_name
+    const workerName = (firstName && lastName) ? `${firstName} ${lastName}` : (userInfo.display_name || 'Travailleur inconnu');
+    
+    const html = `
+        <!-- Boutons d'action -->
+        <div style="position: absolute; top: 10px; right: 50px; display: flex; gap: 10px;">
+            <button id="print-button" class="fiche-poste-action-btn" title="Imprimer" style="background: none; border: none; font-size: 20px; cursor: pointer; padding: 5px; border-radius: 3px;">
+                🖨️
+            </button>
+            <button id="copy-button" class="fiche-poste-copy-btn" title="Copier le contenu" style="border: none;">
+                📋
+            </button>
+        </div>
+        
+        <div class="print">
+            <!-- Titre principal -->
+            <h1>
+                Fiche de poste - ${workerName} - ${dateLiterary}
+            </h1>
+            
+            <!-- Activités en responsabilité -->
+            <h2>
+                Activités en responsabilité
+            </h2>
+            ${formatActivitiesList(responsibleActivities)}
+            
+            <!-- Autres activités -->
+            <h2>
+                Autres activités
+            </h2>
+            ${formatActivitiesList(notResponsibleActivities)}
+        </div>
+    `;
+    
+    return html;
+}
+
+/**
+ * Formater la liste des activités
+ */
+function formatActivitiesList(activities) {
+    if (!activities || activities.length === 0) {
+        return '<p>Aucune activité trouvée</p>';
+    }
+    
+    const activitiesHTML = activities.map(item => {
+        const activity = item.activity;
+        const responsibles = item.responsibles || [];
+        const tasks = item.tasks || [];
+        
+        let html = `
+            <h3>
+                ${formatActivityName(activity, { hideIcon: true })}
+            </h3>
+        `;
+        
+        if (activity.description) {
+            html += `
+                <em>${activity.description}</em>
+            `;
+        }
+        
+        // Mapping des types de responsables selon le type d'activité
+        const getResponsibleLabel = (activityType) => {
+            switch (activityType) {
+                case 'pôle':
+                    return 'Responsables du pôle :';
+                case 'atelier':
+                    return 'Responsables de l\'atelier :';
+                case 'mandat':
+                    return 'Responsables du mandat :';
+                case 'projet':
+                    return 'Responsables du projet :';
+                default:
+                    return 'Responsables :';
+            }
+        };
+        
+        // Section des responsables
+        const responsibleLabel = getResponsibleLabel(activity.type);
+        if (responsibles.length > 0) {
+            html += `
+                <p>
+                    <strong>${responsibleLabel}</strong> ${responsibles.map(responsible => responsible.display_name || responsible.name || 'Responsable inconnu').join(', ')}
+                </p>
+            `;
+        } else {
+            html += `
+                <p>
+                    <strong>${responsibleLabel}</strong> Aucun responsable assigné
+                </p>
+            `;
+        }
+        
+        if (tasks.length > 0) {
+            html += `
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 50%;">Tâches à réaliser</th>
+                            <th style="width: 50%;">Partagé avec</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${tasks.map(task => {
+                            const assignedTo = task.assigned_to || task.assigned || [];
+                            
+                            // Filtrer pour exclure le travailleur actuel
+                            const otherAssignments = assignedTo.filter(assignment => 
+                                String(assignment.id) !== String(selectedWorkerId)
+                            );
+                            
+                            let taskName = `${task.name || 'Tâche sans nom'}`;
+                            if (task.description) {
+                                taskName += `<br><em>${task.description}</em>`;
+                            }
+                            
+                            const sharedWith = otherAssignments.length > 0 
+                                ? otherAssignments.map(assignment => assignment.display_name || assignment.name || 'Assigné inconnu').join(', ')
+                                : '-';
+                            
+                            return `
+                                <tr>
+                                    <td style="width: 50%;">${taskName}</td>
+                                    <td style="width: 50%;">${sharedWith}</td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+        
+        return html;
+    }).join('');
+    
+    return activitiesHTML;
+}
+
+/**
+ * Configurer la fonctionnalité de copie et d'impression
+ */
+function setupCopyFunctionality() {
+    setTimeout(() => {
+        const copyButton = document.getElementById('copy-button');
+        const printButton = document.getElementById('print-button');
+        
+        // Configuration du bouton d'impression
+        if (printButton) {
+            printButton.addEventListener('click', () => {
+                try {
+                    // Créer une nouvelle fenêtre pour l'impression
+                    const printWindow = window.open('', '_blank');
+                    const modalContent = document.querySelector('.modal-content');
+                    
+                    if (modalContent && printWindow) {
+                        // Cloner le contenu complet de la modal
+                        const contentToPrint = modalContent.cloneNode(true);
+                        
+                        // Supprimer les boutons d'action et la croix de fermeture
+                        const actionButtons = contentToPrint.querySelector('div[style*="position: absolute"]');
+                        if (actionButtons) {
+                            actionButtons.remove();
+                        }
+                        
+                        // Supprimer la croix de fermeture de la modal
+                        const closeButton = contentToPrint.querySelector('.modal-close');
+                        if (closeButton) {
+                            closeButton.remove();
+                        }
+                        
+                        // Supprimer le titre de la modal (h3)
+                        const modalTitle = contentToPrint.querySelector('h3');
+                        if (modalTitle) {
+                            modalTitle.remove();
+                        }
+                        
+                        // Créer le HTML pour l'impression avec styles optimisés
+                        const printHTML = `
+                            <!DOCTYPE html>
+                            <html>
+                            <head>
+                                <title>Fiche de poste</title>
+                                <style>
+                                    body {
+                                        margin: 0;
+                                        padding: 20px;
+                                        font-family: Arial, sans-serif;
+                                        background: white;
+                                    }
+                                    @media print {
+                                        body { margin: 0; padding: 10px; }
+                                    }
+                                </style>
+                                <link rel="stylesheet" href="../../shared/css/print.css">
+                            </head>
+                            <body>
+                                ${contentToPrint.innerHTML}
+                            </body>
+                            </html>
+                        `;
+                        
+                        printWindow.document.write(printHTML);
+                        printWindow.document.close();
+                        
+                        // Attendre que le contenu soit chargé puis imprimer
+                        printWindow.onload = () => {
+                            printWindow.print();
+                            printWindow.close();
+                        };
+                        
+                        showMessage('Impression lancée', 'success');
+                    }
+                } catch (error) {
+                    console.error('Erreur lors de l\'impression:', error);
+                    showMessage('Erreur lors de l\'impression', 'error');
+                }
+            });
+            
+            // Effet hover pour le bouton d'impression
+            printButton.addEventListener('mouseenter', () => {
+                printButton.style.backgroundColor = '#f8f9fa';
+            });
+            
+            printButton.addEventListener('mouseleave', () => {
+                printButton.style.backgroundColor = 'transparent';
+            });
+        }
+        
+        // Configuration du bouton de copie
+        if (copyButton) {
+            copyButton.addEventListener('click', async () => {
+                try {
+                    // Trouver le contenu de la modal
+                    const modalContent = document.querySelector('.modal-content');
+                    if (modalContent) {
+                        // Créer une copie du contenu
+                        const contentToCopy = modalContent.cloneNode(true);
+                        
+                        // Supprimer le bouton de copie
+                        const copyBtn = contentToCopy.querySelector('#copy-button');
+                        if (copyBtn) {
+                            copyBtn.remove();
+                        }
+                        
+                        // Supprimer le bouton de fermeture de la modal (×)
+                        const closeBtn = contentToCopy.querySelector('.modal-close');
+                        if (closeBtn) {
+                            closeBtn.remove();
+                        }
+                        
+                        // Supprimer le titre de la modal (h3)
+                        const modalTitle = contentToCopy.querySelector('h3');
+                        if (modalTitle) {
+                            modalTitle.remove();
+                        }
+                        
+                        // Nettoyer les styles
+                        function cleanStyles(element) {
+                            // Supprimer les attributs style et class
+                            element.removeAttribute('style');
+                            element.removeAttribute('class');
+                            
+                            // Appliquer la couleur noire directement
+                            element.style.color = '#000000';
+                            
+                            // Nettoyer les enfants
+                            for (let child of element.children) {
+                                cleanStyles(child);
+                            }
+                        }
+                        
+                        // Nettoyer tous les éléments
+                        cleanStyles(contentToCopy);
+                        
+                        // Récupérer le HTML nettoyé
+                        const htmlContent = contentToCopy.outerHTML;
+                        
+                        // Créer un objet ClipboardItem avec HTML et texte
+                        const clipboardItem = new ClipboardItem({
+                            'text/html': new Blob([htmlContent], { type: 'text/html' }),
+                            'text/plain': new Blob([extractTextContent(contentToCopy)], { type: 'text/plain' })
+                        });
+                        
+                        // Copier avec mise en page HTML
+                        await navigator.clipboard.write([clipboardItem]);
+                        
+                        // Feedback visuel
+                        copyButton.textContent = '✅';
+                        copyButton.title = 'Copié !';
+                        
+                        setTimeout(() => {
+                            copyButton.textContent = '📋';
+                            copyButton.title = 'Copier le contenu';
+                        }, 2000);
+                        
+                        showMessage('Contenu copié avec mise en page', 'success');
+                    }
+                } catch (error) {
+                    console.error('Erreur lors de la copie:', error);
+                    // Fallback vers la méthode texte simple
+                    try {
+                        const modalContent = document.querySelector('.modal-content');
+                        if (modalContent) {
+                            const contentToCopy = modalContent.cloneNode(true);
+                            
+                            // Supprimer les éléments indésirables
+                            const copyBtn = contentToCopy.querySelector('#copy-button');
+                            if (copyBtn) copyBtn.remove();
+                            
+                            const closeBtn = contentToCopy.querySelector('.modal-close');
+                            if (closeBtn) closeBtn.remove();
+                            
+                            const modalTitle = contentToCopy.querySelector('h3');
+                            if (modalTitle) modalTitle.remove();
+                            
+                            const textContent = extractTextContent(contentToCopy);
+                            await navigator.clipboard.writeText(textContent);
+                            showMessage('Contenu copié (texte seulement)', 'info');
+                        }
+                    } catch (fallbackError) {
+                        console.error('Erreur lors de la copie de fallback:', fallbackError);
+                        showMessage('Erreur lors de la copie', 'error');
+                    }
+                }
+            });
+            
+            // Effet hover
+            copyButton.addEventListener('mouseenter', () => {
+                copyButton.style.backgroundColor = '#f8f9fa';
+            });
+            
+            copyButton.addEventListener('mouseleave', () => {
+                copyButton.style.backgroundColor = 'transparent';
+            });
+        }
+    }, 100);
+}
+
+/**
+ * Extraire le contenu texte rendu d'un élément HTML
+ */
+function extractTextContent(element) {
+    let text = '';
+    
+    // Fonction récursive pour parcourir tous les éléments
+    function extractText(node) {
+        if (node.nodeType === Node.TEXT_NODE) {
+            const trimmed = node.textContent.trim();
+            if (trimmed) {
+                text += trimmed + ' ';
+            }
+        } else if (node.nodeType === Node.ELEMENT_NODE) {
+            // Gérer les sauts de ligne pour certains éléments
+            const tagName = node.tagName.toLowerCase();
+            if (['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'div', 'li'].includes(tagName)) {
+                if (text && !text.endsWith('\n')) {
+                    text += '\n';
+                }
+            }
+            
+            // Parcourir les enfants
+            for (let child of node.childNodes) {
+                extractText(child);
+            }
+            
+            // Ajouter un saut de ligne après certains éléments
+            if (['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'div'].includes(tagName)) {
+                if (!text.endsWith('\n')) {
+                    text += '\n';
+                }
+            }
+        }
+    }
+    
+    extractText(element);
+    
+    // Nettoyer le texte final
+    return text
+        .replace(/\n\s*\n/g, '\n') // Supprimer les lignes vides multiples
+        .replace(/\s+$/gm, '') // Supprimer les espaces en fin de ligne
+        .trim();
+}
+
+
 

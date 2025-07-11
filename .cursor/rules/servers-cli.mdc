@@ -1,0 +1,23 @@
+---
+description: Tester l'api ou executer des commande php/mysql dans l'environnement de développement web (podman)
+alwaysApply: false
+---
+
+Informations utiles seulement si besoin de faire des tests avec des scripts php ou pour se connecter à la base mysql en ligne de commande.
+
+# Conteneur podman
+
+Le développement est réalisé dans un conteneur podman.
+
+IMAGE                                COMMAND                                                                    PORTS                 NAMES
+docker.io/library/mysql:8.0          mysqld --log-bin-trust-function-creators=1                                 3306/tcp, 33060/tcp   mysql-db
+docker.io/library/phpmyadmin:latest  apache2-foreground                                                         0.0.0.0:8080->80/tcp  phpmyadmin
+docker.io/library/php:8.2-apache     bash -c docker-php-ext-install mysqli pdo pdo_mysql && apache2-foreground  0.0.0.0:80->80/tcp    php-web
+
+# Commande CLI
+
+Il faut utiliser les commandes suivantes avec sudo.
+
+sudo podman exec -it mysql-db bash
+
+sudo podman exec -it php-web bash
